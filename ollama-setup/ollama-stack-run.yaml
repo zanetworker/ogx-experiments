@@ -1,0 +1,150 @@
+version: 2
+image_name: distribution-myenv-ollama
+apis:
+- inference
+- vector_io
+- safety
+- agents
+- eval
+- datasetio
+- scoring
+- tool_runtime
+- files
+providers:
+  inference:
+  - provider_id: ollama
+    provider_type: remote::ollama
+    config:
+      url: ${env.OLLAMA_URL:=http://localhost:11434}
+  - provider_id: ${env.OPENAI_API_KEY:+openai}
+    provider_type: remote::openai
+    config:
+      api_key: ${env.OPENAI_API_KEY:=}
+  vector_io:
+  - provider_id: faiss
+    provider_type: inline::faiss
+    config:
+      persistence:
+        namespace: vector_io::faiss
+        backend: kv_default
+  safety:
+  - provider_id: llama-guard
+    provider_type: inline::llama-guard
+    config:
+      excluded_categories: []
+  agents:
+  - provider_id: meta-reference
+    provider_type: inline::meta-reference
+    config:
+      persistence:
+        agent_state:
+          namespace: agents
+          backend: kv_default
+        responses:
+          table_name: responses
+          backend: sql_default
+          max_write_queue_size: 10000
+          num_writers: 4
+  eval:
+  - provider_id: meta-reference
+    provider_type: inline::meta-reference
+    config:
+      kvstore:
+        namespace: eval
+        backend: kv_default
+  datasetio:
+  - provider_id: huggingface
+    provider_type: remote::huggingface
+    config:
+      kvstore:
+        namespace: datasetio::huggingface
+        backend: kv_default
+  - provider_id: localfs
+    provider_type: inline::localfs
+    config:
+      kvstore:
+        namespace: datasetio::localfs
+        backend: kv_default
+  scoring:
+  - provider_id: basic
+    provider_type: inline::basic
+    config: {}
+  - provider_id: llm-as-judge
+    provider_type: inline::llm-as-judge
+    config: {}
+  - provider_id: ${env.OPENAI_API_KEY:+braintrust}
+    provider_type: inline::braintrust
+    config:
+      openai_api_key: ${env.OPENAI_API_KEY:=}
+  tool_runtime:
+  - provider_id: ${env.BRAVE_SEARCH_API_KEY:+brave-search}
+    provider_type: remote::brave-search
+    config:
+      api_key: ${env.BRAVE_SEARCH_API_KEY:=}
+      max_results: 3
+  - provider_id: ${env.TAVILY_SEARCH_API_KEY:+tavily-search}
+    provider_type: remote::tavily-search
+    config:
+      api_key: ${env.TAVILY_SEARCH_API_KEY:=}
+      max_results: 3
+  - provider_id: model-context-protocol
+    provider_type: remote::model-context-protocol
+    config: {}
+  files:
+  - provider_id: meta-reference-files
+    provider_type: inline::localfs
+    config:
+      storage_dir: ${env.FILES_STORAGE_DIR:=~/.llama/distributions/distribution-myenv-ollama/files}
+      metadata_store:
+        table_name: files_metadata
+        backend: sql_default
+storage:
+  backends:
+    kv_default:
+      type: kv_sqlite
+      db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/distribution-myenv-ollama}/kvstore.db
+    sql_default:
+      type: sql_sqlite
+      db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/distribution-myenv-ollama}/sql_store.db
+  stores:
+    metadata:
+      namespace: registry
+      backend: kv_default
+    inference:
+      table_name: inference_store
+      backend: sql_default
+      max_write_queue_size: 10000
+      num_writers: 4
+    conversations:
+      table_name: openai_conversations
+      backend: sql_default
+registered_resources:
+  models:
+  - metadata:
+      embedding_dimension: 384
+    model_id: all-MiniLM-L6-v2
+    provider_id: ollama
+    provider_model_id: all-minilm:latest
+    model_type: embedding
+  - model_id: llama-guard3-1b
+    provider_id: ollama
+    provider_model_id: llama-guard3:1b
+    model_type: llm
+  shields:
+  - shield_id: llama-guard
+    provider_id: llama-guard
+    provider_shield_id: ollama/llama-guard3:1b
+  vector_dbs: []
+  datasets: []
+  scoring_fns: []
+  benchmarks: []
+  tool_groups: []
+vector_stores:
+  default_provider_id: faiss
+  default_embedding_model:
+    provider_id: ollama
+    model_id: all-minilm:latest
+telemetry:
+  enabled: true
+server:
+  port: ${env.LLAMA_STACK_PORT:=8321}
