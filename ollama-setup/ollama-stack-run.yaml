@@ -99,6 +99,8 @@ providers:
     config:
       api_key: ${env.TAVILY_SEARCH_API_KEY:=}
       max_results: 3
+  - provider_id: rag-runtime
+    provider_type: inline::rag-runtime
   - provider_id: model-context-protocol
     provider_type: remote::model-context-protocol
     config: {}
@@ -135,16 +137,10 @@ storage:
       backend: kv_default
 registered_resources:
   models:
-  - metadata:
-      embedding_dimension: 768
-    model_id: nomic-embed-text
-    provider_id: ollama
-    provider_model_id: nomic-embed-text:latest
-    model_type: embedding
-  - model_id: llama-guard3-1b
-    provider_id: ollama
-    provider_model_id: llama-guard3:1b
-    model_type: llm
+  # Note: Ollama models are auto-registered
+  # nomic-embed-text is correctly detected as embedding type
+  # mxbai-embed-large is incorrectly detected as llm type (Ollama provider bug)
+  # Manually register vLLM models only
   - model_id: llama-4-scout-17b
     provider_id: vllm-text
     provider_model_id: llama-4-scout-17b-16e-w4a16
@@ -156,12 +152,14 @@ registered_resources:
   shields:
   - shield_id: llama-guard
     provider_id: llama-guard
-    provider_shield_id: ollama/llama-guard3:1b
+    provider_shield_id: ollama/llama-guard3:latest
   vector_dbs: []
   datasets: []
   scoring_fns: []
   benchmarks: []
-  tool_groups: []
+  tool_groups:
+  - toolgroup_id: builtin::rag
+    provider_id: rag-runtime
 vector_stores:
   default_provider_id: faiss
   default_embedding_model:

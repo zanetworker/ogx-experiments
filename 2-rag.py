@@ -2,7 +2,6 @@ import os
 import asyncio
 import httpx
 from termcolor import cprint
-from llama_stack_client import LlamaStackClient
 from openai import OpenAI
 
 async def fetch_document_content(url):
@@ -13,188 +12,190 @@ async def fetch_document_content(url):
             return response.text
     return ""
 
-def simple_chunk_text(text, chunk_size=2048, overlap=200):
-    """Simple text chunking by character count"""
-    chunks = []
-    start = 0
-    text_len = len(text)
-    
-    while start < text_len:
-        end = start + chunk_size
-        chunk_text = text[start:end]
-        if chunk_text.strip():
-            chunks.append(chunk_text)
-        start = end - overlap if end < text_len else end
-    
-    return chunks
-
 async def main():
-    # Initialize Llama Stack client
+    # Initialize OpenAI client for Llama Stack
     port = os.environ.get('LLAMA_STACK_PORT', '8321')
-    llama_client = LlamaStackClient(
-        base_url=f"http://localhost:{port}"
-    )
-
-    # Initialize OpenAI client for chat completions
-    openai_client = OpenAI(
-        base_url=f"http://localhost:{port}/v1/openai/v1",
-        api_key="dummy-key"  # Llama Stack doesn't check this
+    client = OpenAI(
+        base_url=f"http://localhost:{port}/v1",
+        api_key="not-needed"
     )
 
     cprint(f"Connected to Llama Stack at http://localhost:{port}", "cyan")
+
+    # Create a simple vector store first (without files)
+    cprint("\nCreating vector store...", "cyan")
     
-    # Documents to be used for RAG
-    urls = ["chat.rst", "llama3.rst", "datasets.rst", "lora_finetune.rst"]
+    import time
+    vector_store_name = f"pytorch-docs-{int(time.time())}"
+    
+    embedding_model = os.environ.get('EMBEDDING_MODEL', 'ollama/nomic-embed-text:latest')
+    embedding_dim = 768
+
+    # Use smaller chunk size to reduce load on embedding service
+    chunk_size = int(os.environ.get('CHUNK_SIZE_IN_TOKENS', '256'))
+
+    vector_store = client.vector_stores.create(
+        name=vector_store_name,
+        metadata={"description": "PyTorch documentation"},
+        extra_body={
+            "embedding_model": embedding_model,
+            "embedding_dimension": embedding_dim,
+            "provider_id": "faiss",
+            "chunking_strategy": {
+                "type": "fixed",
+                "chunk_size_in_tokens": chunk_size,
+                "chunk_overlap_in_tokens": 0
+            }
+        }
+    )
+    vector_store_id = vector_store.id
+    cprint(f"✓ Created vector store: {vector_store_id}", "green")
+
+    # Fetch and process documents
+    urls = ["chat.rst", "llama3.rst", "lora_finetune.rst"]
     base_url = "https://raw.githubusercontent.com/pytorch/torchtune/main/docs/source/tutorials/"
-    
-    cprint("Fetching documents from URLs...", "cyan")
-    documents = []
-    for i, url in enumerate(urls):
-        full_url = f"{base_url}{url}"
-        cprint(f"  Fetching {url}...", "yellow")
-        content = await fetch_document_content(full_url)
-        if content:
-            documents.append({
-                "document_id": f"num-{i}",
-                "url": full_url,
-                "content": content
-            })
-            cprint(f"    ✓ Loaded {len(content)} chars", "green")
-    
-    # Upload files first
-    cprint("\nUploading files...", "cyan")
+
+    cprint("\nFetching and uploading documents...", "cyan")
     file_ids = []
-
-    for doc in documents:
-        # Create a temporary file
+    
+    for url in urls:
+        full_url = f"{base_url}{url}"
+        cprint(f"  Processing {url}...", "yellow")
+        
+        content = await fetch_document_content(full_url)
+        if not content or len(content) < 100:
+            cprint(f"    ✗ Skipped (empty or failed)", "red")
+            continue
+        
+        cprint(f"    ✓ Fetched {len(content)} chars", "green")
+        
+        # Create file from content
         import tempfile
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
-            f.write(doc["content"])
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as f:
+            f.write(content)
             temp_path = f.name
-
+        
         try:
-            # Upload the file
+            # Upload file
             with open(temp_path, 'rb') as f:
-                file_response = llama_client.files.create(
+                file_response = client.files.create(
                     file=f,
                     purpose='assistants'
                 )
-                file_ids.append(file_response.id)
-                cprint(f"  ✓ Uploaded {doc['document_id']}: {file_response.id}", "green")
+            file_id = file_response.id
+            file_ids.append(file_id)
+            cprint(f"    ✓ Uploaded: {file_id}", "green")
+
+            # Attach to vector store with retry logic
+            max_retries = 3
+            retry_delay = 5
+
+            for attempt in range(max_retries):
+                try:
+                    cprint(f"    ⏳ Attaching to vector store (attempt {attempt + 1}/{max_retries})...", "yellow")
+                    client.vector_stores.files.create(
+                        vector_store_id=vector_store_id,
+                        file_id=file_id
+                    )
+
+                    # Wait longer for processing to avoid overwhelming the embedding service
+                    cprint(f"    ⏳ Waiting for embedding generation...", "yellow")
+                    time.sleep(retry_delay)
+
+                    # Check status
+                    vs_status = client.vector_stores.retrieve(vector_store_id=vector_store_id)
+                    if vs_status.file_counts.completed > len(file_ids) - 1:
+                        cprint(f"    ✓ File processed successfully!", "green")
+                        break
+                    elif vs_status.file_counts.failed > 0:
+                        cprint(f"    ⚠ File may have failed to process", "yellow")
+                        break
+                    else:
+                        cprint(f"    ⏳ Still processing...", "yellow")
+                    break
+
+                except Exception as attach_error:
+                    if attempt < max_retries - 1:
+                        cprint(f"    ⚠ Attachment failed (attempt {attempt + 1}), retrying in {retry_delay}s...", "yellow")
+                        time.sleep(retry_delay)
+                    else:
+                        cprint(f"    ✗ Attachment failed after {max_retries} attempts: {attach_error}", "red")
+                        raise
+
+        except Exception as e:
+            cprint(f"    ✗ Error: {e}", "red")
         finally:
-            # Clean up temp file
-            import os as os_module
-            os_module.unlink(temp_path)
+            os.unlink(temp_path)
 
-    # Create vector store with files
-    import time
-    vector_store_name = f"test-vector-store-{int(time.time())}"  # Unique name each time
-    cprint(f"\nCreating vector store '{vector_store_name}' with {len(file_ids)} files...", "cyan")
-
-    try:
-        # Don't specify embedding model in metadata - let it use the default from server config
-        vector_store = llama_client.vector_stores.create(
-            name=vector_store_name,
-            file_ids=file_ids,
-            metadata={
-                "description": "PyTorch documentation"
-            }
-        )
-        vector_store_id = vector_store.id
-        cprint(f"  ✓ Created vector store: {vector_store_id}", "green")
-    except Exception as e:
-        cprint(f"  Error creating vector store: {e}", "red")
-        raise
-
-    # Wait for files to be processed
-    cprint("\nWaiting for files to be processed...", "cyan")
-    import time
-    max_wait = 60  # Maximum wait time in seconds
-    wait_interval = 2  # Check every 2 seconds
-    elapsed = 0
-
-    while elapsed < max_wait:
-        # Check vector store status
-        vs_status = llama_client.vector_stores.retrieve(vector_store_id=vector_store_id)
-        if vs_status.file_counts.completed == len(file_ids):
-            cprint(f"  ✓ All {len(file_ids)} files processed successfully!", "green")
+    # Wait for all files to finish processing
+    cprint("\nWaiting for all files to complete processing...", "cyan")
+    max_wait = 30
+    for i in range(max_wait):
+        vs_status = client.vector_stores.retrieve(vector_store_id=vector_store_id)
+        completed = vs_status.file_counts.completed
+        failed = vs_status.file_counts.failed
+        in_progress = vs_status.file_counts.in_progress
+        
+        cprint(f"  Status: {completed} completed, {failed} failed, {in_progress} in progress", "yellow")
+        
+        if completed + failed >= len(file_ids):
             break
-        elif vs_status.file_counts.failed > 0:
-            cprint(f"  ⚠ {vs_status.file_counts.failed} files failed to process", "yellow")
-            # List the files to see what went wrong
-            files_list = llama_client.vector_stores.files.list(vector_store_id=vector_store_id)
-            for file in files_list.data:
-                if file.status == "failed" and file.last_error:
-                    cprint(f"    File {file.id}: {file.last_error.message}", "red")
-            break
-        else:
-            in_progress = vs_status.file_counts.in_progress
-            completed = vs_status.file_counts.completed
-            cprint(f"  Processing... ({completed}/{len(file_ids)} completed, {in_progress} in progress)", "yellow")
-            time.sleep(wait_interval)
-            elapsed += wait_interval
-
-    if elapsed >= max_wait:
-        cprint(f"  ⚠ Timeout waiting for files to process", "yellow")
+        
+        time.sleep(1)
     
-    # Query using vector store search directly
+    if vs_status.file_counts.completed == 0:
+        cprint("\n⚠ No files were successfully processed. This is a known issue with Llama Stack.", "yellow")
+        cprint("The file processing may fail silently. Trying query anyway...", "yellow")
+
+    # Query using Responses API
     prompt = "What are the top 5 topics that were explained? Only list succinct bullet points."
 
     cprint(f"\n{'='*80}", "cyan")
     cprint(f"User> {prompt}", "green")
     cprint(f"{'='*80}", "cyan")
 
-    # First, search the vector store to retrieve relevant context
-    cprint("\nSearching vector store for relevant context...", "cyan")
-    search_result = llama_client.vector_stores.search(
-        vector_store_id=vector_store_id,
-        query=prompt,
-        max_num_results=5,
-        search_mode="vector"
-    )
+    model = os.environ.get("INFERENCE_MODEL", "openai/gpt-4o")
+    cprint(f"\nUsing model: {model}", "yellow")
 
-    # Display retrieved chunks
-    cprint(f"\n✓ Retrieved {len(search_result.data)} relevant chunks:", "green")
-    context_text = ""
-    for i, result in enumerate(search_result.data, 1):
-        cprint(f"\n  Chunk {i} (score: {result.score:.3f}):", "yellow")
-        preview = result.content[:200] + "..." if len(result.content) > 200 else result.content
-        print(f"    {preview}")
-        context_text += f"\n\nChunk {i}:\n{result.content}"
+    try:
+        response = client.responses.create(
+            model=model,
+            input=prompt,
+            instructions="You are a helpful assistant specialized in analyzing PyTorch documentation. Provide clear, concise answers based on the retrieved context.",
+            tools=[{
+                "type": "file_search",
+                "vector_store_ids": [vector_store_id],
+                "max_num_results": 5
+            }],
+            tool_choice="required",
+            stream=False,
+            include=["file_search_call.results"]
+        )
 
-    # Now use the context with OpenAI client to generate answer
-    cprint("\n\nGenerating answer using retrieved context...", "cyan")
+        # Display file_search results
+        for item in response.output:
+            if item.type == "file_search_call":
+                cprint(f"\n✓ File search completed with status: {item.status}", "green")
+                if item.results:
+                    cprint(f"  Retrieved {len(item.results)} chunks:", "yellow")
+                    for i, result in enumerate(item.results[:3], 1):
+                        chunk_text = result.text
+                        preview = chunk_text[:150] + "..." if len(chunk_text) > 150 else chunk_text
+                        cprint(f"\n  Chunk {i} (score: {result.score:.3f}):", "yellow")
+                        print(f"    {preview}")
 
-    # Build the prompt with context
-    full_prompt = f"""Based on the following context from PyTorch documentation, {prompt}
+        # Display response
+        cprint("\n\nAssistant>", "blue")
+        print(response.output_text)
 
-Context:
-{context_text}
-
-Answer:"""
-
-    # Use OpenAI-compatible chat completions API
-    response = openai_client.chat.completions.create(
-        model=os.environ.get("INFERENCE_MODEL", "ollama/llama3.2:3b-instruct-fp16"),
-        messages=[
-            {
-                "role": "system",
-                "content": "You are a helpful assistant specialized in analyzing PyTorch documentation. Provide clear, concise answers based on the given context."
-            },
-            {
-                "role": "user",
-                "content": full_prompt
-            }
-        ],
-        stream=False
-    )
-
-    # Display the response
-    cprint("\nAssistant>", "blue")
-    print(response.choices[0].message.content)
-
-    cprint(f"\n{'='*80}", "cyan")
-    cprint("✓ Query completed successfully", "green")
+        cprint(f"\n{'='*80}", "cyan")
+        cprint("✓ Query completed successfully", "green")
+        
+    except Exception as e:
+        cprint(f"\n✗ Error during query: {e}", "red")
+        import traceback
+        traceback.print_exc()
 
 if __name__ == "__main__":
     asyncio.run(main())
+

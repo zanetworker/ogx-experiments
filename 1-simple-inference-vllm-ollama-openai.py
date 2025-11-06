@@ -41,20 +41,32 @@ for item in response.output:
         print(item.content[0].text)
 print()
 
-print(colored("--- Streaming (vLLM Code) ---", "green"))
-stream = client.responses.create(
-    model="vllm-code/RedHatAI/Qwen2.5-Coder-7B-FP8-dynamic",
-    input="Write a simple Python hello world program with a main function.",
-    stream=True
+print(colored("--- OpenAI Model (gpt-4o ---", "green"))
+
+response = client.responses.create(
+    model="openai/gpt-4o",
+    input="What are the benefits of containerization?",
+    stream=False
 )
-for chunk in stream:
-    if hasattr(chunk, 'delta') and chunk.delta:
-        print(chunk.delta, end="", flush=True)
-    elif hasattr(chunk, 'output'):
-        # Handle non-streaming chunks in stream
-        for item in chunk.output:
-            if item.type == "message":
-                print(item.content[0].text, end="", flush=True)
-print("\n")
+for item in response.output:
+    if item.type == "message":
+        print(item.content[0].text)
+print()
+
+# print(colored("--- Streaming (vLLM Code) ---", "green"))
+# stream = client.responses.create(
+#     model="vllm-code/RedHatAI/Qwen2.5-Coder-7B-FP8-dynamic",
+#     input="Write a simple Python hello world program with a main function.",
+#     stream=True
+# )
+# for chunk in stream:
+#     if hasattr(chunk, 'delta') and chunk.delta:
+#         print(chunk.delta, end="", flush=True)
+#     elif hasattr(chunk, 'output'):
+#         # Handle non-streaming chunks in stream
+#         for item in chunk.output:
+#             if item.type == "message":
+#                 print(item.content[0].text, end="", flush=True)
+# print("\n")
 
 print(colored("✓ All tests completed successfully!", "green"))

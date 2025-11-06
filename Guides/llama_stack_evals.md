@@ -207,18 +207,16 @@ Example output:
 
 ## 🔍 Observability Integration
 
-All evaluation runs are automatically tracked by Llama Stack's telemetry system:
+All evaluation runs are automatically tracked by Llama Stack's telemetry system.
+
+Telemetry data is stored in the Llama Stack database and can be accessed via the Telemetry API:
 
 ```bash
-# View telemetry data
-cd telemetry
-python conversation_replay.py list
+# Check telemetry configuration in your run.yaml
+grep -A 10 "telemetry:" experiments/ollama-setup/ollama-stack-run.yaml
 
-# Analyze patterns
-python conversation_patterns.py report
-
-# Export to OpenTelemetry
-python otel_conversation_exporter.py
+# Telemetry is automatically enabled for all API calls
+# Data includes: traces, spans, metrics for inference, tool calls, and evaluations
 ```
 
 ## 🎓 Advanced Usage
