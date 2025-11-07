@@ -1,169 +1,477 @@
 # Llama Stack with Ollama Setup
 
-> ✅ **Status**: Migration complete and working!
-> 📅 **Last Updated**: 2025-10-21
-> 📦 **Configuration Version**: v2
+> ✅ **Status**: Working with v2 configuration format
+> 📅 **Last Updated**: 2024-11-07
 
-This directory contains everything you need to run Llama Stack with Ollama using the **v2 configuration format**.
+Complete guide for running Llama Stack with Ollama, including direct execution and containerized deployment.
 
-**Quick Links**: [Quick Start](#-quick-start) | [Documentation](#-documentation) | [Troubleshooting](TROUBLESHOOTING.md) | [Migration Guide](MIGRATION-GUIDE.md)
+---
 
 ## 📁 Files in This Directory
 
 ### Configuration
-- **`ollama-stack-run.yaml`** - Main configuration file (✅ v2 format)
+- **`ollama-stack-run.yaml`** - Main v2 format configuration file
 
 ### Scripts
 - **`run-ollama-stack.sh`** - Convenience script to run the stack
-- **`install-deps.sh`** - Script to install all required dependencies
+- **`clean-and-restart.sh`** - Clean databases and restart
 
-### Documentation
-- **`README.md`** - This file (overview and quick start)
-- **`QUICKSTART.md`** - Quick reference guide with TL;DR commands
-- **`README-MIGRATION.md`** - Migration guide from old `llama stack build` workflow
-- **`FIXES.md`** - Technical details of configuration fixes
-- **`V2-FORMAT-CHANGES.md`** - Complete v2 format reference and migration guide
-- **`CHANGELOG.md`** - Version history and breaking changes
+---
 
 ## 🚀 Quick Start
 
-```bash
-# 1. Install dependencies (one-time)
-./experiments/ollama-setup/install-deps.sh
+### Prerequisites
 
-# 2. Set environment variables
-export OLLAMA_URL="http://0.0.0.0:11434"
+1. **Python 3.11+** with uv package manager
+2. **Ollama** running locally or accessible via network
+
+### Installation
+
+```bash
+# 1. Sync dependencies with uv
+uv sync --all-groups
+# or simply: uv sync
+
+# 2. Activate virtual environment
+source .venv/bin/activate
+
+# 3. Set environment variables (optional)
+export OLLAMA_URL="http://localhost:11434"
 export LLAMA_STACK_PORT=8321
 
-# 3. Run the stack
+# 4. Run the stack
 ./experiments/ollama-setup/run-ollama-stack.sh
 ```
 
-## 📖 Documentation Guide
+### Verify It's Running
 
-| If you want to... | Read this |
-|-------------------|-----------|
-| Get started quickly | [`QUICKSTART.md`](./QUICKSTART.md) |
-| Migrate from old `llama stack build` | [`README-MIGRATION.md`](./README-MIGRATION.md) |
-| Understand v2 format changes | [`V2-FORMAT-CHANGES.md`](./V2-FORMAT-CHANGES.md) |
-| Check version history | [`CHANGELOG.md`](./CHANGELOG.md) |
-| Customize the config | Edit [`ollama-stack-run.yaml`](./ollama-stack-run.yaml) |
-
-## 🔧 Configuration
-
-The main configuration is in `ollama-stack-run.yaml`. Key settings:
-
-- **Providers**: Ollama, OpenAI, FAISS, Llama Guard, etc.
-- **APIs**: Inference, Vector I/O, Safety, Agents, Eval, etc.
-- **Storage**: SQLite backends for persistence
-- **Server**: Port 8321 (configurable via env var)
-
-## 🌐 Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OLLAMA_URL` | `http://0.0.0.0:11434` | Ollama server URL |
-| `LLAMA_STACK_PORT` | `8321` | Port for Llama Stack server |
-| `INFERENCE_MODEL` | `meta-llama/Llama-3.2-3B-Instruct` | Default inference model |
-| `OPENAI_API_KEY` | - | OpenAI API key (optional) |
-| `BRAVE_SEARCH_API_KEY` | - | Brave Search API key (optional) |
-| `TAVILY_SEARCH_API_KEY` | - | Tavily Search API key (optional) |
-
-## 🐛 Troubleshooting
-
-### Ollama not accessible
 ```bash
-# Make sure Ollama is running
+# Health check
+curl http://localhost:8321/health
+
+# List models
+curl http://localhost:8321/models/list
+
+# Test inference
+curl -X POST http://localhost:8321/inference/chat_completion \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "meta-llama/Llama-3.2-3B-Instruct",
+    "messages": [{"role": "user", "content": "Hello!"}]
+  }'
+```
+
+---
+
+## 🐳 Running in Containers (Podman/Docker)
+
+### Build Container with Custom Config
+
+**Podman:**
+```bash
+# From the llama-stack repository root
+cd /path/to/llama-stack
+
+podman build . \
+  -f containers/Containerfile \
+  --build-arg DISTRO_NAME=starter \
+  --build-arg RUN_CONFIG_PATH=/workspace/experiments/ollama-setup/ollama-stack-run.yaml \
+  --tag llama-stack:ollama-custom
+```
+
+**Docker:**
+```bash
+# From the llama-stack repository root
+cd /path/to/llama-stack
+
+docker build . \
+  -f containers/Containerfile \
+  --build-arg DISTRO_NAME=starter \
+  --build-arg RUN_CONFIG_PATH=/workspace/experiments/ollama-setup/ollama-stack-run.yaml \
+  --tag llama-stack:ollama-custom
+```
+
+**Note:** The build context is the repository root (`.`), and the config file path is `/workspace/experiments/ollama-setup/ollama-stack-run.yaml` because the Containerfile copies the entire repo to `/workspace`.
+
+### Run the Container
+
+**Podman:**
+```bash
+podman run -d \
+  --name llama-stack-ollama \
+  -p 8321:8321 \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://host.containers.internal:11434 \
+  -e OPENAI_API_KEY="sk-..." \
+  llama-stack:ollama-custom \
+  --port 8321
+```
+
+**Docker:**
+```bash
+docker run -d \
+  --name llama-stack-ollama \
+  -p 8321:8321 \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://host.docker.internal:11434 \
+  -e OPENAI_API_KEY="sk-..." \
+  llama-stack:ollama-custom \
+  --port 8321
+```
+
+**Important:** 
+- Podman uses `host.containers.internal` to access host services
+- Docker uses `host.docker.internal` to access host services
+- Podman >= 4.7.0 also supports `host.docker.internal`
+
+### Container Networking Options
+
+#### Option 1: Host Network (Linux only)
+
+**Podman:**
+```bash
+podman run -d \
+  --network host \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://localhost:11434 \
+  llama-stack:ollama-custom
+```
+
+**Docker:**
+```bash
+docker run -d \
+  --network host \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://localhost:11434 \
+  llama-stack:ollama-custom
+```
+
+#### Option 2: Run Ollama in Container Too
+
+**Podman:**
+```bash
+# Start Ollama container
+podman run -d --name ollama -p 11434:11434 ollama/ollama
+
+# Start Llama Stack container
+podman run -d \
+  --name llama-stack-ollama \
+  -p 8321:8321 \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://ollama:11434 \
+  --pod new:llama-pod \
+  llama-stack:ollama-custom
+```
+
+**Docker:**
+```bash
+# Start Ollama container
+docker run -d --name ollama -p 11434:11434 ollama/ollama
+
+# Start Llama Stack container linked to Ollama
+docker run -d \
+  --name llama-stack-ollama \
+  --link ollama:ollama \
+  -p 8321:8321 \
+  -v ~/.llama:/root/.llama \
+  -e OLLAMA_URL=http://ollama:11434 \
+  llama-stack:ollama-custom
+```
+
+### Container Management
+
+**Podman:**
+```bash
+# Check logs
+podman logs -f llama-stack-ollama
+
+# Stop and remove
+podman stop llama-stack-ollama
+podman rm llama-stack-ollama
+
+# Execute commands
+podman exec -it llama-stack-ollama bash
+```
+
+**Docker:**
+```bash
+# Check logs
+docker logs -f llama-stack-ollama
+
+# Stop and remove
+docker stop llama-stack-ollama
+docker rm llama-stack-ollama
+
+# Execute commands
+docker exec -it llama-stack-ollama bash
+```
+
+---
+
+## 🔧 Troubleshooting
+
+### Quick Diagnostics
+
+```bash
+# Verify virtual environment
+which python
+# Should show: .venv/bin/python
+
+# Check Python version
+python --version
+# Should be Python 3.11+
+
+# Verify llama-stack is installed
+python -c "import llama_stack; print(llama_stack.__file__)"
+
+# Validate configuration
+python -c "import yaml; yaml.safe_load(open('experiments/ollama-setup/ollama-stack-run.yaml'))"
+```
+
+### Common Errors
+
+#### 1. ModuleNotFoundError: No module named 'llama_stack_client'
+
+**Solution:**
+```bash
+source .venv/bin/activate
+uv sync --all-groups
+```
+
+#### 2. ValidationError: Field required - kvstore
+
+**Cause:** Wrong field name for provider storage configuration
+
+**Solution:** Use correct field names:
+- `eval`, `datasetio`, `batches` → `kvstore`
+- `vector_io`, `agents` → `persistence`
+- `files` → `metadata_store`
+
+```yaml
+# ✅ CORRECT
+eval:
+- provider_id: meta-reference
+  config:
+    kvstore:  # Not 'persistence'
+      namespace: eval
+      backend: kv_default
+```
+
+#### 3. Provider 'rag-runtime' Not Available
+
+**Cause:** Trying to register RAG as a tool runtime provider
+
+**Solution:** Remove rag-runtime provider - RAG is built-in:
+```yaml
+# ✅ CORRECT - RAG doesn't need a provider
+tool_runtime:
+- provider_id: brave-search
+  provider_type: remote::brave-search
+# RAG tools are automatically available
+```
+
+#### 4. Input Tag 'vector_db' Does Not Match
+
+**Cause:** Old database files with deprecated v1 schema
+
+**Solution:**
+```bash
+rm -rf ~/.llama/distributions/distribution-myenv-ollama/*.db
+./experiments/ollama-setup/run-ollama-stack.sh
+```
+
+#### 5. Ollama Connection Refused
+
+**Solution:**
+```bash
+# Start Ollama
 ollama serve
 
-# Verify it's accessible
+# Or with Podman
+podman run -d -p 11434:11434 ollama/ollama
+
+# Or with Docker
+docker run -d -p 11434:11434 ollama/ollama
+
+# Verify
 curl http://localhost:11434/api/tags
 ```
 
-### Port already in use
+#### 6. Port Already in Use
+
+**Solution:**
 ```bash
-export LLAMA_STACK_PORT=8322
-./run-ollama-stack.sh
+# Find what's using the port
+lsof -i :8321
+
+# Kill the process
+kill -9 <PID>
+
+# Or use different port
+export LLAMA_STACK_PORT=5000
+./experiments/ollama-setup/run-ollama-stack.sh
 ```
 
-### Module not found errors
+#### 7. Container Can't Access Host Ollama
+
+**Podman Solution:**
 ```bash
-./install-deps.sh
+# Check Podman version
+podman --version
+
+# For Podman < 4.7.0, use:
+-e OLLAMA_URL=http://host.containers.internal:11434
+
+# For Podman >= 4.7.0, you can also use:
+-e OLLAMA_URL=http://host.docker.internal:11434
+
+# Test from inside container
+podman exec llama-stack-ollama curl http://host.containers.internal:11434/api/tags
 ```
 
-## 📚 Documentation
+**Docker Solution:**
+```bash
+# Use host.docker.internal
+-e OLLAMA_URL=http://host.docker.internal:11434
 
-### Overview
-- **[SUMMARY.md](SUMMARY.md)** - 🎯 **Start here!** Complete migration summary and success metrics
+# Test from inside container
+docker exec llama-stack-ollama curl http://host.docker.internal:11434/api/tags
+```
 
-### Getting Started
-- **[QUICKSTART.md](QUICKSTART.md)** - Quick reference guide for getting started
-- **[CONTAINER-GUIDE.md](CONTAINER-GUIDE.md)** - Running in Docker/Podman containers
+### Debugging Tips
 
-### Migration & Configuration
-- **[MIGRATION-GUIDE.md](MIGRATION-GUIDE.md)** - Complete v1 to v2 migration guide with all fixes
-- **[V2-FORMAT-CHANGES.md](V2-FORMAT-CHANGES.md)** - Detailed v2 format reference
+#### Enable Debug Logging
+```bash
+export LOG_LEVEL=DEBUG
+./experiments/ollama-setup/run-ollama-stack.sh
+```
 
-### Troubleshooting
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common errors and solutions
+#### Validate Configuration
+```bash
+python -c "
+import yaml
+with open('experiments/ollama-setup/ollama-stack-run.yaml') as f:
+    config = yaml.safe_load(f)
+    print('✅ YAML is valid')
+    print(f'APIs: {config.get(\"apis\", [])}')
+    print(f'Providers: {list(config.get(\"providers\", {}).keys())}')
+"
+```
 
-### Reference
-- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+#### Check Storage Backends
+```bash
+python -c "
+import yaml
+with open('experiments/ollama-setup/ollama-stack-run.yaml') as f:
+    config = yaml.safe_load(f)
+    backends = config.get('storage', {}).get('backends', {})
+    print('Storage backends:')
+    for name, backend in backends.items():
+        print(f'  {name}: {backend.get(\"type\")} -> {backend.get(\"db_path\")}')
+"
+```
 
-### External Resources
+#### Test Components
+```bash
+# Test Ollama
+curl http://localhost:11434/api/tags
+
+# Test Llama Stack health
+curl http://localhost:8321/health
+
+# List models
+curl http://localhost:8321/models/list
+```
+
+---
+
+## 📋 Configuration Checklist
+
+Before running, verify your configuration has:
+
+- [ ] `version: 2` at the top
+- [ ] Centralized `storage.backends` section
+- [ ] Correct field names for each provider type
+- [ ] No `inline::rag-runtime` provider
+- [ ] Empty `tool_groups: []` or valid tool groups
+- [ ] Valid environment variable syntax
+- [ ] Proper namespace prefixes (e.g., `datasetio::huggingface`)
+- [ ] Backend references match defined backend names
+
+---
+
+## 🔄 Clean Restart
+
+If you encounter persistent issues:
+
+```bash
+# Use the clean restart script
+./experiments/ollama-setup/clean-and-restart.sh
+
+# Or manually
+rm -rf ~/.llama/distributions/distribution-myenv-ollama/*.db
+./experiments/ollama-setup/run-ollama-stack.sh
+```
+
+---
+
+## 📊 Direct vs Container Comparison
+
+| Aspect | Direct Run | Container |
+|--------|-----------|-----------|
+| **Setup** | uv + .venv | Container image |
+| **Isolation** | Process-level | Full OS-level |
+| **Portability** | Platform-dependent | Cross-platform |
+| **Updates** | `uv sync` | Rebuild image |
+| **Debugging** | Direct access | Via exec/logs |
+| **Performance** | Native | Near-native |
+
+**Use Direct Run when:**
+- Developing/debugging
+- Frequent config changes
+- Need direct file access
+
+**Use Containers when:**
+- Production deployment
+- Need isolation
+- Multiple environments
+- CI/CD pipelines
+
+---
+
+## 🎯 Environment Variables
+
+The configuration supports these environment variables:
+
+```bash
+# Ollama connection
+export OLLAMA_URL="http://localhost:11434"
+
+# Server port
+export LLAMA_STACK_PORT=8321
+
+# Optional API keys
+export OPENAI_API_KEY="sk-..."
+export BRAVE_SEARCH_API_KEY="..."
+export TAVILY_SEARCH_API_KEY="..."
+```
+
+---
+
+## 📚 Additional Resources
+
 - [Llama Stack Documentation](https://llama-stack.readthedocs.io/)
 - [Ollama Documentation](https://ollama.ai/docs)
-- [Available Distributions](../../llama_stack/distributions/)
+- [Podman Documentation](https://docs.podman.io/)
+- Configuration reference: `ollama-stack-run.yaml`
 
-## 💡 Tips
+---
 
-1. **First time setup**: Run `install-deps.sh` before anything else
-2. **Custom models**: Edit the `registered_resources.models` section in the YAML
-3. **Add providers**: Check available providers with `llama stack list-providers`
-4. **Debug mode**: Set `LOG_LEVEL=DEBUG` for verbose logging
+## 🆘 Getting Help
 
-## 🔄 What Changed?
+If you're still stuck:
 
-### From Old Workflow
-The `llama stack build` command no longer exists. You can now:
-- ✅ Run directly without a build step
-- ✅ Use environment variables for configuration
-- ✅ Skip the `--image-type` and `--image-name` flags
-
-See [`README-MIGRATION.md`](./README-MIGRATION.md) for full details.
-
-### Configuration v2 Format
-The configuration file now uses v2 format with:
-- ✅ Centralized storage configuration
-- ✅ Backend references instead of direct database paths
-- ✅ Conditional provider activation
-- ✅ Proper schema validation
-
-See [`V2-FORMAT-CHANGES.md`](./V2-FORMAT-CHANGES.md) for complete details.
-
-## 📋 What's New in v2
-
-1. **Centralized Storage** - All databases defined in one place
-2. **Reusable Backends** - Multiple providers share the same storage
-3. **Conditional Providers** - Only enable providers when API keys are set
-4. **Better Validation** - Schema-compliant configuration
-5. **Environment Variables** - Full support for env var substitution
-
-## 🎯 Provider Status
-
-### Always Enabled ✅
-- Ollama (inference)
-- FAISS (vector storage)
-- Llama Guard (safety)
-- Meta Reference (agents, eval)
-- Hugging Face (datasets)
-- LocalFS (datasets, files)
-- Basic & LLM-as-Judge (scoring)
-- RAG Runtime & MCP (tools)
-
-### Conditionally Enabled 🔑
-- OpenAI (requires `OPENAI_API_KEY`)
-- Braintrust (requires `OPENAI_API_KEY`)
-- Brave Search (requires `BRAVE_SEARCH_API_KEY`)
-- Tavily Search (requires `TAVILY_SEARCH_API_KEY`)
-
+1. **Check the logs** - Look for the first error in the stack trace
+2. **Verify the basics** - Python environment, Ollama running, ports available
+3. **Clean slate** - Remove databases and try again
+4. **Simplify** - Start with minimal configuration and add providers incrementally
