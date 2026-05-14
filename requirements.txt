@@ -1,6 +1,4 @@
 openai
+httpx
 anthropic
 google-genai
-llama-stack-client
-httpx
-termcolor

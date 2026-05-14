@@ -1,10 +1,16 @@
 # OGX Dev Setup
 
 Custom distribution config for running OGX with multiple inference backends:
-Ollama (local), vLLM/MaaS (remote cluster), and cloud providers (OpenAI, Gemini).
+Ollama (local), vLLM (self-hosted or gateway-fronted), and cloud providers
+(OpenAI, Gemini).
 
 Use this instead of the built-in `starter` distribution when you need a
-tailored provider set, MaaS token auth, or a persistent local config.
+tailored provider set, custom auth, or a persistent local config.
+
+For vLLM provider docs, see the
+[OGX vLLM provider reference](https://ogx-ai.github.io/docs/providers/inference/remote_vllm).
+For the passthrough provider (per-request auth), see the
+[passthrough reference](https://ogx-ai.github.io/docs/providers/inference/remote_passthrough).
 
 ## Files
 
@@ -44,27 +50,44 @@ ollama pull llama3.2:latest       # pull a model
 
 Ollama is always enabled. Models are auto-discovered.
 
-### Option C: vLLM via MaaS gateway (Red Hat internal)
+### Option C: vLLM (self-hosted or any OpenAI-compatible endpoint)
 
 ```bash
-# Login to the OpenShift cluster
-oclogingpu
+export VLLM_URL="http://your-vllm-server:8000/v1"
+export VLLM_API_TOKEN="your-token"    # or "fake" if no auth required
 
-# List available models on the cluster
-source mint-maas-token.sh --list
+./run-ogx.sh
+```
 
-# Mint a token for a specific model (default: kimi-k2-6)
-source mint-maas-token.sh
-source mint-maas-token.sh gemma4       # or pick a different model
+For vLLM behind a gateway with path-based routing (e.g., MaaS, Envoy, or
+any reverse proxy that routes `/{namespace}/{model}/v1/...`), set the full
+path in `VLLM_URL`:
 
-# Start the server (clean DBs on first run or after model switch)
+```bash
+export VLLM_URL="https://gateway.example.com/my-namespace/my-model/v1"
+export VLLM_API_TOKEN="your-bearer-token"
+
+./clean-and-restart.sh    # clean DBs on first run or after model switch
+```
+
+### Option D: MaaS on OpenShift (uses the included token minting script)
+
+If your vLLM models are served via a
+[MaaS gateway](https://github.com/opendatahub-io/models-as-a-service)
+on OpenShift:
+
+```bash
+oc login ...                                       # login to your cluster
+
+source mint-maas-token.sh --list                   # list available models
+source mint-maas-token.sh                          # mint token (default model)
+source mint-maas-token.sh gemma4                   # or pick a model
+
 ./clean-and-restart.sh
 ```
 
 The script must be **sourced** (not executed) so the env vars persist in your shell.
-
-`oc whoami -t` does NOT work for MaaS inference. The script mints a
-dedicated API token via `/maas-api/v1/tokens` (72h expiry by default).
+It mints a dedicated API token via the MaaS token endpoint (72h expiry).
 
 ## Verify
 
@@ -181,9 +204,11 @@ vLLM models, configure one provider per model in the YAML or use the
 | `POST /v1alpha/interactions` | Google GenAI | Gemini Interactions API compatibility |
 | `GET /v1/health` | curl | Server health check |
 
-## MaaS Models (Red Hat Internal)
+## Example: MaaS Models on TMM Cluster
 
-Available on the TMM GPU cluster in the `prelude-maas` namespace:
+Models available on the Red Hat TMM GPU cluster (`prelude-maas` namespace).
+Your cluster will have different models; run `source mint-maas-token.sh --list`
+to see yours.
 
 | Model | model_name | Type |
 |-------|-----------|------|
