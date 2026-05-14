@@ -148,6 +148,99 @@ print(response.choices[0].message.content)
 | Interactions | `POST /v1alpha/interactions` | Gemini SDK compatibility |
 | Health | `GET /v1/health` | Server health check |
 
+## Switching Models and Providers
+
+OGX registers models with a `{provider}/{model}` naming convention. The provider prefix
+tells OGX which backend to route the request to.
+
+### Model naming by provider
+
+| Provider | INFERENCE_MODEL example | What happens |
+|----------|------------------------|-------------|
+| OpenAI | `openai/gpt-4o-mini` | OGX forwards to OpenAI API (needs `OPENAI_API_KEY`) |
+| OpenAI | `openai/gpt-4.1-nano` | Cheapest/fastest OpenAI model |
+| Gemini | `gemini/models/gemini-2.5-flash` | OGX forwards to Google (needs `GEMINI_API_KEY`) |
+| vLLM/MaaS | `vllm/kimi-k2-6` | OGX forwards to `VLLM_URL` with `VLLM_API_TOKEN` |
+| Ollama | `ollama/llama3.2:latest` | OGX forwards to local Ollama |
+
+### How to switch
+
+Just change the `INFERENCE_MODEL` env var. The server doesn't need to restart:
+
+```bash
+# Use OpenAI
+INFERENCE_MODEL=openai/gpt-4o-mini python inference/structured_output.py
+
+# Use MaaS (must have sourced mint-maas-token.sh first)
+INFERENCE_MODEL=vllm/kimi-k2-6 python inference/structured_output.py
+
+# Use Ollama (must have ollama running with the model pulled)
+INFERENCE_MODEL=ollama/llama3.2:latest python inference/token_tracking.py
+```
+
+### How provider activation works in the config
+
+The `ogx-dev-run.yaml` uses conditional provider IDs. A provider only activates
+when its env var is set and non-empty:
+
+```yaml
+# This provider only registers if VLLM_URL is set:
+- provider_id: ${env.VLLM_URL:+vllm}     # empty VLLM_URL = provider skipped
+
+# This provider only registers if OPENAI_API_KEY is set:
+- provider_id: ${env.OPENAI_API_KEY:+openai}
+
+# Ollama always registers (has a default URL):
+- provider_id: ollama
+```
+
+To see which models are registered after startup:
+
+```bash
+curl -s http://localhost:8321/v1/models | python3 -c "
+import sys, json
+for m in json.load(sys.stdin)['data']:
+    print(m['id'])
+" | head -20
+```
+
+### Switching MaaS models
+
+MaaS uses path-based routing, so each model needs a different `VLLM_URL`.
+The `mint-maas-token.sh` script handles this:
+
+```bash
+source mint-maas-token.sh kimi-k2-6    # sets VLLM_URL to .../kimi-k2-6/v1
+source mint-maas-token.sh gemma4        # sets VLLM_URL to .../gemma4/v1
+```
+
+After switching, clean the DB (the old model is cached) and restart:
+
+```bash
+./clean-and-restart.sh
+```
+
+### Using multiple providers simultaneously
+
+All providers with set env vars are active at the same time. You can use
+different models in the same session without restarting:
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8321/v1", api_key="unused")
+
+# One request to OpenAI
+r1 = client.chat.completions.create(model="openai/gpt-4o-mini", messages=[...])
+
+# Next request to MaaS/vLLM
+r2 = client.chat.completions.create(model="vllm/kimi-k2-6", messages=[...])
+```
+
+The limitation is that only one vLLM model is available at a time (since
+`VLLM_URL` points to one model's path). For multiple vLLM models simultaneously,
+you'd need multiple providers in the config (one per model) or use the
+`remote::passthrough` provider with BDR routing.
+
 ## MaaS Models on TMM Cluster
 
 Available models in `prelude-maas` namespace (as of 2026-05-13):
