@@ -43,7 +43,6 @@ experiments/
     token_tracking.py
     structured_output.py
     embeddings.py
-    TOKEN_TRACKING_README.md
 
   rag/                     # vector stores, file search, hybrid search
     check_vector_stores.py
@@ -51,13 +50,11 @@ experiments/
     vector_search.py
     rag_file_search.py
     rag_hybrid_search.py
-    HYBRID_SEARCH_GUIDE.md
 
   tools/                   # MCP, function calling
     mcp_responses.py
     mcp_streaming.py
     function_tools.py
-    tools_tutorial.md
 
   agents/                  # multi-step, multi-agent patterns
     architectures.py
