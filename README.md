@@ -5,7 +5,7 @@ Personal dev/test scripts exercising OGX features through the OpenAI-compatible 
 ## Quick start
 
 ```bash
-# Setup (once)
+# Setup (once, from the llama-stack repo root)
 uv venv --python 3.12 && uv sync --group dev && uv pip install -e .
 uv pip install -r experiments/requirements.txt
 
@@ -25,16 +25,16 @@ INFERENCE_MODEL=openai/gpt-4o-mini python experiments/inference/structured_outpu
 
 ```
 experiments/
-  conftest.py              # shared client, model, port
   test-demos.sh            # test runner
   requirements.txt
 
-  inference/               # basic inference, models, embeddings
+  inference/               # basic inference, models, embeddings, structured output
     check_models.py
     simple_inference.py
     token_tracking.py
     structured_output.py
     embeddings.py
+    TOKEN_TRACKING_README.md
 
   rag/                     # vector stores, file search, hybrid search
     check_vector_stores.py
@@ -42,11 +42,13 @@ experiments/
     vector_search.py
     rag_file_search.py
     rag_hybrid_search.py
+    HYBRID_SEARCH_GUIDE.md
 
   tools/                   # MCP, function calling
     mcp_responses.py
     mcp_streaming.py
     function_tools.py
+    tools_tutorial.md
 
   agents/                  # multi-step, multi-agent patterns
     architectures.py
