@@ -18,9 +18,8 @@ Requirements:
   pip install openai termcolor
 
 Usage:
-  # Start OGX on port 8321 (default)
-  export INFERENCE_MODEL="openai/gpt-4o-mini"  # or any model registered in OGX
-  python 12-batches.py
+  export INFERENCE_MODEL="openai/gpt-4o-mini"
+  python batch_processing.py
 """
 
 import json
@@ -29,8 +28,17 @@ import sys
 import time
 from io import BytesIO
 
-from openai import OpenAI
-from termcolor import colored
+try:
+    from openai import OpenAI
+except ImportError:
+    print("Missing dependency: pip install openai")
+    sys.exit(1)
+
+try:
+    from termcolor import colored
+except ImportError:
+    print("Missing dependency: pip install termcolor")
+    sys.exit(1)
 
 
 def get_client():
@@ -313,17 +321,27 @@ def main():
     print(colored(f"Model:      {model}", "cyan"))
     print()
 
-    try:
-        demo_create_and_process(client, model)
-        demo_list_and_retrieve(client, model)
-        demo_cancel(client, model)
-    except Exception as e:
-        print(colored(f"\nError: {e}", "red"))
-        print(colored("Make sure OGX is running and the model is available.", "red"))
-        sys.exit(1)
+    demo_create_and_process(client, model)
+    demo_list_and_retrieve(client, model)
+    demo_cancel(client, model)
 
     print(colored("All demos completed successfully.", "green"))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except ConnectionError as e:
+        print(colored(f"\nConnection error: {e}", "red"))
+        print(colored("Is OGX running? Start it and try again.", "red"))
+        sys.exit(1)
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "connection" in error_msg or "refused" in error_msg or "unreachable" in error_msg:
+            print(colored(f"\nConnection error: {e}", "red"))
+            print(colored("Is OGX running? Start it and try again.", "red"))
+        else:
+            print(colored(f"\nError: {e}", "red"))
+        sys.exit(1)

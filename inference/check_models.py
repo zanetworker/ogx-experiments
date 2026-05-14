@@ -1,66 +1,59 @@
 #!/usr/bin/env python3
-"""
-Quick script to check available models and shields in OGX
-"""
+"""Check available models and shields registered in OGX."""
 
 import os
-from openai import OpenAI
+import sys
+
 import httpx
 
-ogx_url = f"http://0.0.0.0:{os.environ.get('OGX_PORT', '8321')}"
 
-print("=" * 80)
-print("OGX Configuration Check")
-print("=" * 80)
-print(f"\n📍 OGX URL: {ogx_url}\n")
+def main():
+    port = os.environ.get("OGX_PORT", "8321")
+    base_url = f"http://localhost:{port}"
 
-# Check models
-print("=" * 80)
-print("Registered Models:")
-print("=" * 80)
+    print("=" * 60)
+    print("OGX Configuration Check")
+    print("=" * 60)
+    print(f"\nServer: {base_url}\n")
 
-try:
-    response = httpx.get(f"{ogx_url}/v1/models")
-    if response.status_code == 200:
+    print("Registered Models:")
+    print("-" * 60)
+    try:
+        response = httpx.get(f"{base_url}/v1/models")
+        response.raise_for_status()
         models = response.json()
         if models.get("data"):
             for model in models["data"]:
-                model_id = model.get('identifier') or model.get('model_id') or model.get('id', 'Unknown')
-                model_type = model.get('model_type', '')
-                print(f"  ✓ {model_id} ({model_type})")
+                model_id = model.get("id") or model.get("identifier") or model.get("model_id", "Unknown")
+                model_type = model.get("model_type", "")
+                print(f"  {model_id} ({model_type})")
         else:
-            print("  ⚠️  No models registered!")
-    else:
-        print(f"  ❌ HTTP {response.status_code}")
-except Exception as e:
-    print(f"  ❌ Error: {e}")
+            print("  No models registered.")
+    except httpx.HTTPStatusError as e:
+        print(f"  HTTP {e.response.status_code}: {e.response.text}")
 
-# Check shields
-print("\n" + "=" * 80)
-print("Registered Shields:")
-print("=" * 80)
-
-try:
-    response = httpx.get(f"{ogx_url}/v1/shields")
-    if response.status_code == 200:
+    print("\nRegistered Shields:")
+    print("-" * 60)
+    try:
+        response = httpx.get(f"{base_url}/v1/shields")
+        response.raise_for_status()
         shields = response.json()
         if shields.get("data"):
             for shield in shields["data"]:
-                print(f"  ✓ {shield['identifier']} -> {shield.get('provider_resource_id', 'N/A')}")
+                print(f"  {shield['identifier']} -> {shield.get('provider_resource_id', 'N/A')}")
         else:
-            print("  ⚠️  No shields registered!")
-    else:
-        print(f"  ❌ HTTP {response.status_code}: {response.text}")
-except Exception as e:
-    print(f"  ❌ Error: {e}")
+            print("  No shields registered.")
+    except httpx.HTTPStatusError as e:
+        print(f"  HTTP {e.response.status_code}: {e.response.text}")
 
-print("\n" + "=" * 80)
-print("Summary:")
-print("=" * 80)
-print("""
-If models or shields are missing:
-1. Verify your run.yaml has the correct configuration
-2. Restart OGX with: ogx run <your-config>.yaml
-3. Check if Ollama has the model: ollama list
-4. Pull if needed: ollama pull llama-guard3:1b
-""")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except httpx.ConnectError:
+        port = os.environ.get("OGX_PORT", "8321")
+        print(f"Failed to connect to OGX at http://localhost:{port}.", file=sys.stderr)
+        print("Start the server with: ogx run <config>.yaml", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        sys.exit(130)

@@ -16,9 +16,8 @@ Requirements:
   pip install google-genai termcolor
 
 Usage:
-  # Start OGX on port 8321 (default)
-  export INFERENCE_MODEL="openai/gpt-4o-mini"  # or any model registered in OGX
-  python 10-gemini-interactions.py
+  export INFERENCE_MODEL="openai/gpt-4o-mini"
+  python gemini_interactions.py
 """
 
 import json
@@ -26,24 +25,27 @@ import os
 import sys
 import warnings
 
-from google import genai
-from google.genai import types
-from termcolor import colored
+try:
+    from google import genai
+except ImportError:
+    print("Missing dependency: pip install google-genai")
+    sys.exit(1)
+
+try:
+    from termcolor import colored
+except ImportError:
+    print("Missing dependency: pip install termcolor")
+    sys.exit(1)
 
 
 def get_client():
     """Create a Google GenAI client pointed at OGX."""
     port = os.environ.get("OGX_PORT", "8321")
-    base_url = f"http://localhost:{port}"
 
-    client = genai.Client(
+    return genai.Client(
         api_key="unused",
-        http_options=types.HttpOptions(
-            base_url=base_url,
-            api_version="v1alpha",
-        ),
+        http_options={"base_url": f"http://localhost:{port}/v1alpha"},
     )
-    return client
 
 
 def get_model():
@@ -251,7 +253,6 @@ def demo_generation_config(client, model):
 
 
 def main():
-    # Suppress the experimental usage warning from google-genai
     warnings.filterwarnings("ignore", message="Interactions usage is experimental")
 
     client = get_client()
@@ -262,20 +263,30 @@ def main():
     print(colored(f"Model:      {model}", "cyan"))
     print()
 
-    try:
-        demo_basic_interaction(client, model)
-        demo_streaming(client, model)
-        demo_multi_turn(client, model)
-        demo_system_instruction(client, model)
-        demo_tool_use(client, model)
-        demo_generation_config(client, model)
-    except Exception as e:
-        print(colored(f"\nError: {e}", "red"))
-        print(colored("Make sure OGX is running and the model is available.", "red"))
-        sys.exit(1)
+    demo_basic_interaction(client, model)
+    demo_streaming(client, model)
+    demo_multi_turn(client, model)
+    demo_system_instruction(client, model)
+    demo_tool_use(client, model)
+    demo_generation_config(client, model)
 
     print(colored("All demos completed successfully.", "green"))
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(130)
+    except ConnectionError as e:
+        print(colored(f"\nConnection error: {e}", "red"))
+        print(colored("Is OGX running? Start it and try again.", "red"))
+        sys.exit(1)
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "connection" in error_msg or "refused" in error_msg or "unreachable" in error_msg:
+            print(colored(f"\nConnection error: {e}", "red"))
+            print(colored("Is OGX running? Start it and try again.", "red"))
+        else:
+            print(colored(f"\nError: {e}", "red"))
+        sys.exit(1)
