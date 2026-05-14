@@ -20,6 +20,51 @@ providers:
     provider_type: remote::openai
     config:
       api_key: ${env.OPENAI_API_KEY:=}
+  - provider_id: ${env.MAAS_TOKEN:+kimi}
+    provider_type: remote::vllm
+    config:
+      base_url: ${env.MAAS_HOST:=https://maas.apps.ocp.cloud.rhai-tmm.dev}/prelude-maas/kimi-k2-6/v1
+      max_tokens: ${env.VLLM_MAX_TOKENS:=4096}
+      api_token: ${env.MAAS_TOKEN:=fake}
+      network:
+        tls:
+          verify: true
+  - provider_id: ${env.MAAS_TOKEN:+gemma}
+    provider_type: remote::vllm
+    config:
+      base_url: ${env.MAAS_HOST:=https://maas.apps.ocp.cloud.rhai-tmm.dev}/prelude-maas/gemma4/v1
+      max_tokens: ${env.VLLM_MAX_TOKENS:=4096}
+      api_token: ${env.MAAS_TOKEN:=fake}
+      network:
+        tls:
+          verify: true
+  - provider_id: ${env.MAAS_TOKEN:+scout}
+    provider_type: remote::vllm
+    config:
+      base_url: ${env.MAAS_HOST:=https://maas.apps.ocp.cloud.rhai-tmm.dev}/prelude-maas/llama-4-scout-17b-16e-w4a16/v1
+      max_tokens: ${env.VLLM_MAX_TOKENS:=4096}
+      api_token: ${env.MAAS_TOKEN:=fake}
+      network:
+        tls:
+          verify: true
+  - provider_id: ${env.MAAS_TOKEN:+nemotron}
+    provider_type: remote::vllm
+    config:
+      base_url: ${env.MAAS_HOST:=https://maas.apps.ocp.cloud.rhai-tmm.dev}/prelude-maas/nemotron-cascade-2-30b/v1
+      max_tokens: ${env.VLLM_MAX_TOKENS:=4096}
+      api_token: ${env.MAAS_TOKEN:=fake}
+      network:
+        tls:
+          verify: true
+  - provider_id: ${env.MAAS_TOKEN:+qwen}
+    provider_type: remote::vllm
+    config:
+      base_url: ${env.MAAS_HOST:=https://maas.apps.ocp.cloud.rhai-tmm.dev}/prelude-maas/qwen35-9b/v1
+      max_tokens: ${env.VLLM_MAX_TOKENS:=4096}
+      api_token: ${env.MAAS_TOKEN:=fake}
+      network:
+        tls:
+          verify: true
   - provider_id: ${env.VLLM_URL:+vllm}
     provider_type: remote::vllm
     config:

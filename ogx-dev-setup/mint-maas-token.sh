@@ -1,9 +1,9 @@
 #!/bin/bash
 # Mint a MaaS API token and export env vars for OGX.
 # Usage:
-#   source ./experiments/ogx-dev-setup/mint-maas-token.sh              # default: kimi-k2-6
-#   source ./experiments/ogx-dev-setup/mint-maas-token.sh gemma4       # different model
+#   source ./experiments/ogx-dev-setup/mint-maas-token.sh              # mint token, all models activated
 #   source ./experiments/ogx-dev-setup/mint-maas-token.sh --list       # list available models
+#   source ./experiments/ogx-dev-setup/mint-maas-token.sh --model kimi-k2-6  # set default INFERENCE_MODEL
 #
 # Must be sourced (not executed) so exports persist in your shell.
 
@@ -34,26 +34,36 @@ if [ "${1:-}" = "--list" ] || [ "${1:-}" = "-l" ]; then
     return 0 2>/dev/null || exit 0
 fi
 
-MODEL=${1:-kimi-k2-6}
+# Parse --model flag
+DEFAULT_MODEL="kimi-k2-6"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --model|-m) DEFAULT_MODEL="$2"; shift 2 ;;
+        *) DEFAULT_MODEL="$1"; shift ;;
+    esac
+done
 
 # Mint token
 echo "Minting MaaS token (${EXPIRY} expiry)..."
 SSO_TOKEN=$(oc whoami -t)
-MAAS_TOKEN=$(curl -sSk \
+TOKEN=$(curl -sSk \
     -H "Authorization: Bearer ${SSO_TOKEN}" \
     -H "Content-Type: application/json" \
     -X POST -d "{\"expiration\": \"${EXPIRY}\"}" \
     "${HOST}/maas-api/v1/tokens" | jq -r .token)
 
-if [ -z "$MAAS_TOKEN" ] || [ "$MAAS_TOKEN" = "null" ]; then
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
     echo "Failed to mint token. Check oc login and cluster access."
     return 1 2>/dev/null || exit 1
 fi
 
-# Export MaaS vars
-export VLLM_URL="${HOST}/${NAMESPACE}/${MODEL}/v1"
-export VLLM_API_TOKEN="$MAAS_TOKEN"
-export INFERENCE_MODEL="vllm/${MODEL}"
+# Export shared token (activates all MaaS providers in ogx-dev-run.yaml)
+export MAAS_TOKEN="$TOKEN"
+export MAAS_HOST="$HOST"
+export INFERENCE_MODEL="${DEFAULT_MODEL}"
+
+# Also set VLLM vars for the generic vllm provider (backward compat)
+export VLLM_API_TOKEN="$TOKEN"
 
 # Load .env if it exists (for OPENAI_API_KEY, GEMINI_API_KEY, etc.)
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -66,11 +76,14 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 echo ""
-echo "MaaS:   ${MAAS_TOKEN:0:20}..."
-echo "Model:  ${MODEL}"
-echo "URL:    ${VLLM_URL}"
+echo "Token:  ${TOKEN:0:20}..."
+echo "Models: kimi, gemma, scout, nemotron, qwen (all activated)"
+echo "Default: INFERENCE_MODEL=${INFERENCE_MODEL}"
 [ -n "${OPENAI_API_KEY:-}" ]  && echo "OpenAI: configured"
 [ -n "${GEMINI_API_KEY:-}" ]  && echo "Gemini: configured"
 echo ""
-echo "Exported: VLLM_URL, VLLM_API_TOKEN, INFERENCE_MODEL"
-echo "Now run:  ./experiments/ogx-dev-setup/run-ogx.sh"
+echo "Use any model:  INFERENCE_MODEL=kimi/kimi-k2-6 python ..."
+echo "                INFERENCE_MODEL=gemma/gemma4 python ..."
+echo "                INFERENCE_MODEL=scout/llama-4-scout-17b-16e-w4a16 python ..."
+echo ""
+echo "Now run:  ./ogx-dev-setup/run-ogx.sh"
