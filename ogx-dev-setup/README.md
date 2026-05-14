@@ -1,78 +1,70 @@
 # OGX Dev Setup
 
-Personal dev configuration for running OGX with Ollama, MaaS (vLLM), and cloud providers.
+Custom distribution config for running OGX with multiple inference backends:
+Ollama (local), vLLM/MaaS (remote cluster), and cloud providers (OpenAI, Gemini).
 
-Last updated: 2026-05-13
+Use this instead of the built-in `starter` distribution when you need a
+tailored provider set, MaaS token auth, or a persistent local config.
 
 ## Files
 
 | File | Purpose |
 |------|---------|
-| `ogx-dev-run.yaml` | Distribution config (Ollama + vLLM + OpenAI + Gemini + search tools + RAG) |
-| `run-ogx.sh` | Start the OGX server |
-| `clean-and-restart.sh` | Wipe databases and restart (for schema migration issues) |
-| `mint-maas-token.sh` | Mint a MaaS API token and export VLLM env vars (must be sourced) |
+| `ogx-dev-run.yaml` | Distribution config (Ollama + vLLM + OpenAI + Gemini + embeddings + RAG + search tools) |
+| `run-ogx.sh` | Start the OGX server with this config |
+| `clean-and-restart.sh` | Wipe databases and restart (fixes schema migration errors) |
+| `mint-maas-token.sh` | Mint a MaaS API token and export vLLM env vars (must be sourced) |
+| `.env.example` | Template for API keys (copy to `.env`, which is gitignored) |
 
 ## Prerequisites
 
-- Python 3.12 (required by OGX pre-commit hooks)
+- Python 3.12
 - [uv](https://docs.astral.sh/uv/) package manager
-- Ollama running locally (optional, for local models)
-
-One-time setup from the repo root:
-
-```bash
-uv venv --python 3.12
-uv sync --group dev
-uv pip install -e .
-```
+- OGX installed in editable mode (see the root [README](../README.md))
 
 ## Quick Start
 
-### Local only (Ollama)
+### Option A: Cloud providers only (OpenAI, Gemini)
 
 ```bash
-ollama serve  # in another terminal, if not already running
+cp .env.example .env
+# Edit .env: add your OPENAI_API_KEY, GEMINI_API_KEY, etc.
 
-./experiments/ogx-dev-setup/run-ogx.sh
+./run-ogx.sh
 ```
 
-### With MaaS (TMM cluster vLLM models)
+### Option B: Local inference with Ollama
 
 ```bash
-# Login to the cluster
+ollama serve                      # in another terminal
+ollama pull llama3.2:latest       # pull a model
+
+./run-ogx.sh
+```
+
+Ollama is always enabled. Models are auto-discovered.
+
+### Option C: vLLM via MaaS gateway (Red Hat internal)
+
+```bash
+# Login to the OpenShift cluster
 oclogingpu
 
-# List available models
-source ./experiments/ogx-dev-setup/mint-maas-token.sh --list
+# List available models on the cluster
+source mint-maas-token.sh --list
 
-# Mint token and export env vars (default: kimi-k2-6)
-source ./experiments/ogx-dev-setup/mint-maas-token.sh
+# Mint a token for a specific model (default: kimi-k2-6)
+source mint-maas-token.sh
+source mint-maas-token.sh gemma4       # or pick a different model
 
-# Or for a different model:
-source ./experiments/ogx-dev-setup/mint-maas-token.sh gemma4
-
-# Clean stale DBs (needed after switching models or first run)
-./experiments/ogx-dev-setup/clean-and-restart.sh
-
-# Or start without cleaning
-./experiments/ogx-dev-setup/run-ogx.sh
+# Start the server (clean DBs on first run or after model switch)
+./clean-and-restart.sh
 ```
 
-Note: `oc whoami -t` does NOT work for inference. The script mints a token via `/maas-api/v1/tokens`.
-Must be **sourced** (not executed) so env vars persist in your shell.
+The script must be **sourced** (not executed) so the env vars persist in your shell.
 
-### With cloud providers
-
-```bash
-export OPENAI_API_KEY="sk-..."      # enables OpenAI models
-export GEMINI_API_KEY="..."         # enables Gemini models
-export ANTHROPIC_API_KEY="..."      # enables Anthropic models
-
-./experiments/ogx-dev-setup/run-ogx.sh
-```
-
-Providers only activate when their env var is set. No API key = provider is skipped silently.
+`oc whoami -t` does NOT work for MaaS inference. The script mints a
+dedicated API token via `/maas-api/v1/tokens` (72h expiry by default).
 
 ## Verify
 
@@ -80,39 +72,81 @@ Providers only activate when their env var is set. No API key = provider is skip
 # Health check
 curl http://localhost:8321/v1/health
 
-# List models (OpenAI-compatible)
-curl http://localhost:8321/v1/models | python3 -m json.tool
+# List registered models
+curl -s http://localhost:8321/v1/models | python3 -c "
+import sys, json
+for m in json.load(sys.stdin)['data']:
+    print(m['id'])
+" | head -20
 
-# Test chat completion
+# Test chat completion (substitute your model)
 curl http://localhost:8321/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "vllm/kimi-k2-6",
+    "model": "openai/gpt-4o-mini",
     "messages": [{"role": "user", "content": "Hello"}],
     "max_tokens": 50
   }'
-
-# Test with the Responses API
-curl http://localhost:8321/v1/responses \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "vllm/kimi-k2-6",
-    "input": "Explain containers in one sentence"
-  }'
 ```
 
-Or from Python:
+## Switching Models and Providers
+
+OGX prefixes model names with the provider. The prefix determines which
+backend handles the request:
+
+| Backend | INFERENCE_MODEL | Requires |
+|---------|----------------|----------|
+| OpenAI | `openai/gpt-4o-mini` | `OPENAI_API_KEY` |
+| Gemini | `gemini/models/gemini-2.5-flash` | `GEMINI_API_KEY` |
+| vLLM/MaaS | `vllm/kimi-k2-6` | `VLLM_URL` + `VLLM_API_TOKEN` |
+| Ollama | `ollama/llama3.2:latest` | Ollama running locally |
+
+Switch between providers by changing `INFERENCE_MODEL`. No server restart needed:
+
+```bash
+INFERENCE_MODEL=openai/gpt-4o-mini python ../inference/structured_output.py
+INFERENCE_MODEL=vllm/kimi-k2-6 python ../inference/structured_output.py
+INFERENCE_MODEL=ollama/llama3.2:latest python ../inference/token_tracking.py
+```
+
+### How provider activation works
+
+The config uses conditional provider IDs. A provider only registers when its
+env var is set and non-empty:
+
+```yaml
+- provider_id: ${env.VLLM_URL:+vllm}          # skipped if VLLM_URL is empty
+- provider_id: ${env.OPENAI_API_KEY:+openai}   # skipped if no API key
+- provider_id: ollama                           # always active (has default URL)
+```
+
+### Using multiple providers at once
+
+All active providers coexist. You can route different requests to different
+backends in the same session:
 
 ```python
 from openai import OpenAI
-
 client = OpenAI(base_url="http://localhost:8321/v1", api_key="unused")
-response = client.chat.completions.create(
-    model="vllm/kimi-k2-6",
-    messages=[{"role": "user", "content": "Hello"}],
-)
-print(response.choices[0].message.content)
+
+r1 = client.chat.completions.create(model="openai/gpt-4o-mini", messages=[...])
+r2 = client.chat.completions.create(model="ollama/llama3.2:latest", messages=[...])
 ```
+
+### Switching MaaS models
+
+MaaS uses path-based routing: each model has its own URL path. The
+`mint-maas-token.sh` script sets `VLLM_URL` to the correct path:
+
+```bash
+source mint-maas-token.sh kimi-k2-6    # VLLM_URL=.../kimi-k2-6/v1
+source mint-maas-token.sh gemma4        # VLLM_URL=.../gemma4/v1
+./clean-and-restart.sh                  # clean cached model from DB
+```
+
+Only one vLLM model is available at a time with this setup. For multiple
+vLLM models, configure one provider per model in the YAML or use the
+`remote::passthrough` provider.
 
 ## Environment Variables
 
@@ -120,130 +154,36 @@ print(response.choices[0].message.content)
 |----------|---------|---------|
 | `OGX_PORT` | `8321` | Server port |
 | `OLLAMA_URL` | `http://localhost:11434/v1` | Ollama endpoint |
-| `VLLM_URL` | (none) | vLLM/MaaS endpoint. Provider activates only when set. |
+| `VLLM_URL` | (none) | vLLM/MaaS endpoint. Activates provider when set. |
 | `VLLM_API_TOKEN` | `fake` | Bearer token for vLLM/MaaS auth |
 | `VLLM_MAX_TOKENS` | `4096` | Max output tokens for vLLM |
 | `VLLM_TLS_VERIFY` | `true` | TLS verification for vLLM endpoint |
-| `OPENAI_API_KEY` | (none) | OpenAI provider. Activates when set. |
-| `GEMINI_API_KEY` | (none) | Gemini provider. Activates when set. |
-| `ANTHROPIC_API_KEY` | (none) | Anthropic provider (not in this config but available in starter). |
-| `BRAVE_SEARCH_API_KEY` | (none) | Brave web search tool |
-| `TAVILY_SEARCH_API_KEY` | (none) | Tavily web search tool |
+| `OPENAI_API_KEY` | (none) | Activates OpenAI provider |
+| `GEMINI_API_KEY` | (none) | Activates Gemini provider |
+| `BRAVE_SEARCH_API_KEY` | (none) | Activates Brave web search tool |
+| `TAVILY_SEARCH_API_KEY` | (none) | Activates Tavily web search tool |
 | `INFERENCE_MODEL` | (none) | Default model for experiment scripts |
 | `FILES_STORAGE_DIR` | `~/.ogx/.../files` | File storage directory |
-| `SQLITE_STORE_DIR` | `~/.ogx/.../` | Database directory |
+| `SQLITE_STORE_DIR` | `~/.ogx/.../` | SQLite database directory |
 
-## APIs Available
+## APIs
 
-| API | Endpoint | What it does |
-|-----|----------|-------------|
-| Chat Completions | `POST /v1/chat/completions` | Standard OpenAI chat (any client) |
-| Responses | `POST /v1/responses` | Agentic orchestration: tool calling, MCP, file search |
-| Embeddings | `POST /v1/embeddings` | Text embeddings (via Ollama or sentence-transformers) |
-| Models | `GET /v1/models` | List registered models |
-| Files | `POST /v1/files` | Upload files for RAG |
-| Vector Stores | `POST /v1/vector_stores` | Managed document storage and search |
-| Batches | `POST /v1/batches` | Offline batch processing |
-| Messages | `POST /v1/messages` | Anthropic SDK compatibility |
-| Interactions | `POST /v1alpha/interactions` | Gemini SDK compatibility |
-| Health | `GET /v1/health` | Server health check |
+| Endpoint | SDK | What it does |
+|----------|-----|-------------|
+| `POST /v1/chat/completions` | OpenAI | Standard chat (any OpenAI-compatible client) |
+| `POST /v1/responses` | OpenAI | Agentic orchestration: tool calling, MCP, file search |
+| `POST /v1/embeddings` | OpenAI | Text embeddings |
+| `GET /v1/models` | OpenAI | List registered models |
+| `POST /v1/files` | OpenAI | Upload files for RAG |
+| `POST /v1/vector_stores` | OpenAI | Document storage and search |
+| `POST /v1/batches` | OpenAI | Offline batch processing |
+| `POST /v1/messages` | Anthropic | Anthropic Messages API compatibility |
+| `POST /v1alpha/interactions` | Google GenAI | Gemini Interactions API compatibility |
+| `GET /v1/health` | curl | Server health check |
 
-## Switching Models and Providers
+## MaaS Models (Red Hat Internal)
 
-OGX registers models with a `{provider}/{model}` naming convention. The provider prefix
-tells OGX which backend to route the request to.
-
-### Model naming by provider
-
-| Provider | INFERENCE_MODEL example | What happens |
-|----------|------------------------|-------------|
-| OpenAI | `openai/gpt-4o-mini` | OGX forwards to OpenAI API (needs `OPENAI_API_KEY`) |
-| OpenAI | `openai/gpt-4.1-nano` | Cheapest/fastest OpenAI model |
-| Gemini | `gemini/models/gemini-2.5-flash` | OGX forwards to Google (needs `GEMINI_API_KEY`) |
-| vLLM/MaaS | `vllm/kimi-k2-6` | OGX forwards to `VLLM_URL` with `VLLM_API_TOKEN` |
-| Ollama | `ollama/llama3.2:latest` | OGX forwards to local Ollama |
-
-### How to switch
-
-Just change the `INFERENCE_MODEL` env var. The server doesn't need to restart:
-
-```bash
-# Use OpenAI
-INFERENCE_MODEL=openai/gpt-4o-mini python inference/structured_output.py
-
-# Use MaaS (must have sourced mint-maas-token.sh first)
-INFERENCE_MODEL=vllm/kimi-k2-6 python inference/structured_output.py
-
-# Use Ollama (must have ollama running with the model pulled)
-INFERENCE_MODEL=ollama/llama3.2:latest python inference/token_tracking.py
-```
-
-### How provider activation works in the config
-
-The `ogx-dev-run.yaml` uses conditional provider IDs. A provider only activates
-when its env var is set and non-empty:
-
-```yaml
-# This provider only registers if VLLM_URL is set:
-- provider_id: ${env.VLLM_URL:+vllm}     # empty VLLM_URL = provider skipped
-
-# This provider only registers if OPENAI_API_KEY is set:
-- provider_id: ${env.OPENAI_API_KEY:+openai}
-
-# Ollama always registers (has a default URL):
-- provider_id: ollama
-```
-
-To see which models are registered after startup:
-
-```bash
-curl -s http://localhost:8321/v1/models | python3 -c "
-import sys, json
-for m in json.load(sys.stdin)['data']:
-    print(m['id'])
-" | head -20
-```
-
-### Switching MaaS models
-
-MaaS uses path-based routing, so each model needs a different `VLLM_URL`.
-The `mint-maas-token.sh` script handles this:
-
-```bash
-source mint-maas-token.sh kimi-k2-6    # sets VLLM_URL to .../kimi-k2-6/v1
-source mint-maas-token.sh gemma4        # sets VLLM_URL to .../gemma4/v1
-```
-
-After switching, clean the DB (the old model is cached) and restart:
-
-```bash
-./clean-and-restart.sh
-```
-
-### Using multiple providers simultaneously
-
-All providers with set env vars are active at the same time. You can use
-different models in the same session without restarting:
-
-```python
-from openai import OpenAI
-client = OpenAI(base_url="http://localhost:8321/v1", api_key="unused")
-
-# One request to OpenAI
-r1 = client.chat.completions.create(model="openai/gpt-4o-mini", messages=[...])
-
-# Next request to MaaS/vLLM
-r2 = client.chat.completions.create(model="vllm/kimi-k2-6", messages=[...])
-```
-
-The limitation is that only one vLLM model is available at a time (since
-`VLLM_URL` points to one model's path). For multiple vLLM models simultaneously,
-you'd need multiple providers in the config (one per model) or use the
-`remote::passthrough` provider with BDR routing.
-
-## MaaS Models on TMM Cluster
-
-Available models in `prelude-maas` namespace (as of 2026-05-13):
+Available on the TMM GPU cluster in the `prelude-maas` namespace:
 
 | Model | model_name | Type |
 |-------|-----------|------|
@@ -256,13 +196,7 @@ Available models in `prelude-maas` namespace (as of 2026-05-13):
 | Granite Vision | `granite-vision-32-2b` | Vision |
 | Qwen 2.5 VL | `qwen25-vl-7b-instruct-fp8` | Vision |
 
-To use a different model, change the `VLLM_URL` path:
-
-```bash
-export VLLM_URL="https://maas.apps.ocp.cloud.rhai-tmm.dev/prelude-maas/gemma4/v1"
-```
-
-Each model needs its own `base_url` because MaaS uses path-based routing.
+Run `source mint-maas-token.sh --list` for the current list.
 
 ## Troubleshooting
 
@@ -273,17 +207,16 @@ lsof -ti :8321 | xargs kill -9
 
 **Schema migration errors (stale DBs):**
 ```bash
-./experiments/ogx-dev-setup/clean-and-restart.sh
+./clean-and-restart.sh
 ```
 
 **vLLM model not appearing in /v1/models:**
-The vLLM provider auto-discovers models from the remote endpoint. If the model isn't listed, verify:
 ```bash
 curl -sk "${VLLM_URL}/models" -H "Authorization: Bearer ${VLLM_API_TOKEN}"
 ```
 
 **MaaS token expired (401):**
-Re-mint via the token endpoint. Tokens last 72h by default.
+Re-source `mint-maas-token.sh` to mint a new one.
 
 **Python version mismatch:**
-OGX requires Python 3.12. Check with `python3.12 --version`. The `.venv` created by `uv venv --python 3.12` is independent of pyenv.
+OGX requires 3.12. The `.venv` from `uv venv --python 3.12` is independent of pyenv.
