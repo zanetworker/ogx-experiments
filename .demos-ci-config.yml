@@ -1,0 +1,107 @@
+# Configuration for Experiments Demos CI
+# This file controls which demos are tested and how
+
+# Global settings
+timeout_seconds: 120  # Default timeout for each demo
+python_version: "3.12"
+
+# Ollama models to pre-pull
+ollama_models:
+  - llama3.2:3b-instruct-fp16
+  - all-minilm:latest
+
+# Environment variables to set for all demos
+env_vars:
+  OLLAMA_URL: "http://localhost:11434"
+  LLAMA_STACK_PORT: "8321"
+  LLAMA_STACK_URL: "http://localhost:8321"
+
+# Demo-specific configuration
+demos:
+  # Demos that should be tested
+  "0-check-models.py":
+    enabled: true
+    timeout: 30
+    description: "Check available models"
+  
+  "0-check_vector_stores.py":
+    enabled: true
+    timeout: 30
+    description: "Check vector stores"
+  
+  "0-list-vector-stores.py":
+    enabled: true
+    timeout: 30
+    description: "List vector stores"
+  
+  "0-test-embedding.py":
+    enabled: true
+    timeout: 60
+    description: "Test embedding functionality"
+  
+  "0-test_llm_judge.py":
+    enabled: true
+    timeout: 90
+    description: "Test LLM judge functionality"
+    requires_api_keys:
+      - OPENAI_API_KEY  # Optional, will skip if not available
+  
+  "0-vector-search-demo.py":
+    enabled: true
+    timeout: 90
+    description: "Vector search demonstration"
+  
+  "1-simple-inference-vllm-ollama-openai.py":
+    enabled: true
+    timeout: 120
+    description: "Simple inference with multiple backends"
+  
+  "2-rag.py":
+    enabled: true
+    timeout: 120
+    description: "RAG demonstration"
+  
+  "2a-rag-hybrid-search.py":
+    enabled: true
+    timeout: 120
+    description: "RAG with hybrid search"
+  
+  "3-mcp-with-responses.py":
+    enabled: true
+    timeout: 120
+    description: "MCP with responses API"
+    requires_api_keys:
+      - BRAVE_SEARCH_API_KEY  # Will skip if not available
+  
+  "4-responses-with-safety.py":
+    enabled: true
+    timeout: 120
+    description: "Responses API with safety"
+  
+  "5-responses-function-tools.py":
+    enabled: true
+    timeout: 120
+    description: "Responses API with function calling"
+  
+  "6-agentic-tools-with-llama-stack-evals.py":
+    enabled: true
+    timeout: 180
+    description: "Agentic tools with evaluations"
+
+# Demos to skip (for various reasons)
+skip:
+  # Examples of demos you might want to skip:
+  # - name: "manual-test.py"
+  #   reason: "Requires manual intervention"
+  # - name: "expensive-demo.py"
+  #   reason: "Too expensive to run in CI"
+  # - name: "wip-demo.py"
+  #   reason: "Work in progress"
+
+# Notification settings (for future use)
+notifications:
+  on_failure:
+    create_issue: false  # Set to true to auto-create GitHub issues on failure
+  on_success:
+    comment_pr: false    # Set to true to comment on PRs when demos pass
+

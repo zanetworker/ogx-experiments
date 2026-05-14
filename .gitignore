@@ -1,2 +1,4 @@
 .claude/
 rfes/
+__pycache__/.env
+__pycache__/

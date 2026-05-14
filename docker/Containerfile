@@ -1,0 +1,126 @@
+# syntax=docker/dockerfile:1.6
+#
+# Containerfile for building Llama Stack container image
+# This file is based on the official llama-stack Containerfile
+#
+# Build examples:
+#
+# 1. Build with a specific distribution (e.g., starter):
+#    docker build -f docker/Containerfile \
+#      --build-arg DISTRO_NAME=starter \
+#      --tag llama-stack:starter .
+#
+# 2. Build with a custom run configuration:
+#    docker build -f docker/Containerfile \
+#      --build-arg DISTRO_NAME=starter \
+#      --build-arg RUN_CONFIG_PATH=/workspace/ollama-setup/ollama-stack-run.yaml \
+#      --tag llama-stack:custom .
+#
+# 3. Build from PyPI (production):
+#    docker build -f docker/Containerfile \
+#      --build-arg INSTALL_MODE=pypi \
+#      --build-arg DISTRO_NAME=starter \
+#      --tag llama-stack:latest .
+
+ARG BASE_IMAGE=python:3.12-slim
+FROM ${BASE_IMAGE}
+
+# Build arguments
+ARG INSTALL_MODE="pypi"
+ARG LLAMA_STACK_DIR="/workspace"
+ARG PYPI_VERSION=""
+ARG DISTRO_NAME="starter"
+ARG RUN_CONFIG_PATH=""
+ARG UV_HTTP_TIMEOUT=500
+
+# Environment variables
+ENV UV_HTTP_TIMEOUT=${UV_HTTP_TIMEOUT}
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV UV_SYSTEM_PYTHON=1
+ENV INSTALL_MODE=${INSTALL_MODE}
+ENV LLAMA_STACK_DIR=${LLAMA_STACK_DIR}
+ENV DISTRO_NAME=${DISTRO_NAME}
+ENV RUN_CONFIG_PATH=${RUN_CONFIG_PATH}
+
+WORKDIR /app
+
+# Install system dependencies
+RUN set -eux; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        iputils-ping net-tools iproute2 dnsutils telnet \
+        curl wget git procps psmisc lsof traceroute bubblewrap \
+        gcc g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install uv package manager
+RUN pip install --no-cache uv
+
+# Copy the repository (needed for editable installs and custom configs)
+COPY . /workspace
+
+# Install llama-stack
+RUN set -eux; \
+    if [ "$INSTALL_MODE" = "editable" ]; then \
+        if [ ! -d "$LLAMA_STACK_DIR" ]; then \
+            echo "INSTALL_MODE=editable requires LLAMA_STACK_DIR to point to a directory inside the build context" >&2; \
+            exit 1; \
+        fi; \
+        uv pip install --no-cache -e "$LLAMA_STACK_DIR"; \
+    else \
+        if [ -n "$PYPI_VERSION" ]; then \
+            uv pip install --no-cache "llama-stack==$PYPI_VERSION"; \
+        else \
+            uv pip install --no-cache llama-stack; \
+        fi; \
+    fi
+
+# Install distribution dependencies using llama stack list-deps
+RUN set -eux; \
+    if [ -z "$DISTRO_NAME" ]; then \
+        echo "DISTRO_NAME must be provided" >&2; \
+        exit 1; \
+    fi; \
+    deps="$(llama stack list-deps "$DISTRO_NAME")"; \
+    if [ -n "$deps" ]; then \
+        printf '%s\n' "$deps" | xargs -L1 uv pip install --no-cache; \
+    fi
+
+# Cleanup
+RUN set -eux; \
+    pip uninstall -y uv; \
+    should_remove=1; \
+    if [ "$INSTALL_MODE" = "editable" ]; then should_remove=0; fi; \
+    case "$RUN_CONFIG_PATH" in \
+        /workspace*) should_remove=0 ;; \
+    esac; \
+    if [ "$should_remove" -eq 1 ] && [ -d /workspace ]; then rm -rf /workspace; fi
+
+# Create entrypoint script
+RUN cat <<'EOF' >/usr/local/bin/llama-stack-entrypoint.sh
+#!/bin/sh
+set -e
+
+if [ -n "$RUN_CONFIG_PATH" ] && [ -f "$RUN_CONFIG_PATH" ]; then
+  exec llama stack run "$RUN_CONFIG_PATH" "$@"
+fi
+
+if [ -n "$DISTRO_NAME" ]; then
+  exec llama stack run "$DISTRO_NAME" "$@"
+fi
+
+exec llama stack run "$@"
+EOF
+
+RUN chmod +x /usr/local/bin/llama-stack-entrypoint.sh
+
+# Create necessary directories with proper permissions
+RUN mkdir -p /.llama /.cache && chmod -R g+rw /app /.llama /.cache
+
+# Expose default port
+EXPOSE 8321
+
+ENTRYPOINT ["/usr/local/bin/llama-stack-entrypoint.sh"]
+CMD ["--port", "8321"]
+
