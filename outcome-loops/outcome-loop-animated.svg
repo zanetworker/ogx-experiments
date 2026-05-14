@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 360" width="920" height="360">
+  <defs>
+    <radialGradient id="glow-teal" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#37A3A3" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#37A3A3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-red" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#EE0000" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#EE0000" stop-opacity="0"/>
+    </radialGradient>
+    <marker id="arrow-teal" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#37A3A3"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#EE0000"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#5E40BE"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6" fill="#F5921B"/>
+    </marker>
+  </defs>
+  <style>
+    @keyframes flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -24; } }
+    @keyframes flowRev { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 24; } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes pulse2 { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes heartbeat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    @keyframes orbit { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes orbitRev { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
+    @keyframes failPass {
+      0%,35% { opacity: 1; }
+      40%,45% { opacity: 0; }
+      50%,100% { opacity: 0; }
+    }
+    @keyframes passFail {
+      0%,45% { opacity: 0; }
+      50%,85% { opacity: 1; }
+      90%,100% { opacity: 0; }
+    }
+    @keyframes feedbackPulse {
+      0%,40% { stroke-opacity: 0.15; }
+      45%,55% { stroke-opacity: 0.8; }
+      60%,100% { stroke-opacity: 0.15; }
+    }
+    @keyframes scoreFailIn {
+      0%,5% { opacity: 0; transform: translateY(6px); }
+      10%,38% { opacity: 1; transform: translateY(0); }
+      42%,100% { opacity: 0; transform: translateY(-6px); }
+    }
+    @keyframes scorePassIn {
+      0%,48% { opacity: 0; transform: translateY(6px); }
+      52%,88% { opacity: 1; transform: translateY(0); }
+      92%,100% { opacity: 0; transform: translateY(-6px); }
+    }
+    .fl { stroke-dasharray: 6 6; animation: flow 1.4s linear infinite; }
+    .fl2 { stroke-dasharray: 6 6; animation: flow 1.4s linear infinite; animation-delay: 0.4s; }
+    .fl3 { stroke-dasharray: 6 6; animation: flow 1.4s linear infinite; animation-delay: 0.8s; }
+    .flr { stroke-dasharray: 6 6; animation: flowRev 1.4s linear infinite; }
+    .p1 { animation: pulse 3s ease-in-out infinite; }
+    .p2 { animation: pulse2 3s ease-in-out infinite; }
+    .hb { animation: heartbeat 1.3s ease-in-out infinite; transform-origin: center; transform-box: fill-box; }
+    .orb { animation: orbit 12s linear infinite; transform-origin: 460px 180px; }
+    .orbR { animation: orbitRev 18s linear infinite; transform-origin: 460px 180px; }
+    .fail-phase { animation: failPass 8s ease-in-out infinite; }
+    .pass-phase { animation: passFail 8s ease-in-out infinite; }
+    .fb-pulse { animation: feedbackPulse 8s ease-in-out infinite; }
+    .score-fail { animation: scoreFailIn 8s ease-in-out infinite; }
+    .score-pass { animation: scorePassIn 8s ease-in-out infinite; }
+    text { font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace; }
+    .lbl { font-family: 'Inter', 'SF Pro', system-ui, sans-serif; }
+  </style>
+
+  <!-- Background -->
+  <rect width="920" height="360" rx="16" fill="#0a0a0a"/>
+
+  <!-- Orbiting dots around center -->
+  <circle cx="490" cy="145" r="3" fill="#37A3A3" opacity="0.6" class="orb"/>
+  <circle cx="430" cy="215" r="2.5" fill="#EE0000" opacity="0.5" class="orbR"/>
+  <circle cx="460" cy="150" r="2" fill="#5E40BE" opacity="0.4" class="orb" style="animation-delay: -4s;"/>
+
+  <!-- Section headers -->
+  <text x="105" y="28" text-anchor="middle" fill="#5E40BE" font-size="9" letter-spacing="0.22em" font-weight="700" opacity="0.7">TASK · INPUT</text>
+  <text x="350" y="28" text-anchor="middle" fill="#EE0000" font-size="9" letter-spacing="0.22em" font-weight="700" opacity="0.7">AGENT · GENERATE</text>
+  <text x="610" y="28" text-anchor="middle" fill="#37A3A3" font-size="9" letter-spacing="0.22em" font-weight="700" opacity="0.7">JUDGE · EVALUATE</text>
+  <text x="810" y="28" text-anchor="middle" fill="#F5921B" font-size="9" letter-spacing="0.22em" font-weight="700" opacity="0.7">LOG · TRACK</text>
+
+  <!-- Task Input Card -->
+  <rect x="20" y="50" width="170" height="105" rx="12" fill="rgba(94,64,190,0.10)" stroke="#5E40BE" stroke-opacity="0.5" stroke-width="1.5"/>
+  <text x="40" y="75" fill="#5E40BE" font-size="11" font-weight="700" letter-spacing="0.05em">📝 TASK</text>
+  <text x="40" y="95" fill="#E0E0E0" font-size="11" font-weight="600" class="lbl">"Improve this RFE"</text>
+  <text x="40" y="113" fill="#A3A3A3" font-size="10" class="lbl">rubric · 10 criteria</text>
+  <text x="40" y="131" fill="#5E40BE" font-size="10" class="lbl p1">threshold: 18/20</text>
+  <circle cx="183" cy="100" r="4" fill="#5E40BE" class="p1"/>
+
+  <!-- Flow: Task → Agent -->
+  <line x1="195" y1="100" x2="253" y2="100" stroke="#5E40BE" stroke-width="1.5" class="fl" marker-end="url(#arrow-purple)"/>
+
+  <!-- OGX Agent Card -->
+  <rect x="260" y="45" width="180" height="120" rx="12" fill="rgba(238,0,0,0.07)" stroke="#EE0000" stroke-opacity="0.4" stroke-width="1.5"/>
+  <!-- glow removed, too prominent -->
+  <text x="280" y="72" fill="#EE0000" font-size="11" font-weight="700" letter-spacing="0.05em">⚡ OGX · AGENT</text>
+  <rect x="275" y="82" width="150" height="22" rx="6" fill="rgba(238,0,0,0.10)" stroke="#EE0000" stroke-opacity="0.2"/>
+  <text x="285" y="97" fill="#F56E6E" font-size="10" class="lbl">kimi/kimi-k2-6</text>
+  <circle cx="418" cy="93" r="3" fill="#F56E6E" class="p1"/>
+  <rect x="275" y="109" width="150" height="22" rx="6" fill="rgba(55,163,163,0.06)" stroke="#37A3A3" stroke-opacity="0.2"/>
+  <text x="285" y="124" fill="#9AD8D8" font-size="10" class="lbl">gemma/gemma4</text>
+  <text x="280" y="155" fill="#A3A3A3" font-size="9" class="lbl">self-hosted · vLLM</text>
+
+  <!-- Flow: Agent → Judge -->
+  <line x1="445" y1="105" x2="498" y2="105" stroke="#A3A3A3" stroke-width="1.2" class="fl2" marker-end="url(#arrow-teal)"/>
+
+  <!-- OGX Judge Card -->
+  <rect x="505" y="45" width="180" height="120" rx="12" fill="rgba(55,163,163,0.08)" stroke="#37A3A3" stroke-opacity="0.5" stroke-width="1.5"/>
+  <!-- glow removed, too prominent -->
+  <text x="525" y="72" fill="#37A3A3" font-size="11" font-weight="700" letter-spacing="0.05em">🔍 OGX · JUDGE</text>
+  <rect x="520" y="82" width="150" height="22" rx="6" fill="rgba(55,163,163,0.10)" stroke="#37A3A3" stroke-opacity="0.2"/>
+  <text x="530" y="97" fill="#9AD8D8" font-size="10" class="lbl">openai/gpt-5-mini</text>
+  <circle cx="663" cy="93" r="3" fill="#9AD8D8" class="p2"/>
+  <text x="525" y="125" fill="#A3A3A3" font-size="9" class="lbl">hosted · OpenAI API</text>
+  <text x="525" y="145" fill="#37A3A3" font-size="10" class="lbl p2">rubric: 10 criteria</text>
+
+  <!-- Flow: Judge → Score -->
+  <line x1="690" y1="105" x2="723" y2="105" stroke="#37A3A3" stroke-width="1.5" class="fl3" marker-end="url(#arrow-teal)"/>
+
+  <!-- Score Card: FAIL state (first half of cycle) -->
+  <g class="score-fail">
+    <rect x="730" y="55" width="130" height="100" rx="12" fill="rgba(238,0,0,0.06)" stroke="#EE0000" stroke-opacity="0.4" stroke-width="1.5"/>
+    <text x="795" y="80" text-anchor="middle" fill="#EE0000" font-size="10" font-weight="700" letter-spacing="0.1em">SCORE</text>
+    <text x="795" y="115" text-anchor="middle" fill="#F56E6E" font-size="28" font-weight="800">12/20</text>
+    <text x="795" y="143" text-anchor="middle" fill="#EE0000" font-size="11" font-weight="700">✗ FAIL</text>
+  </g>
+
+  <!-- Score Card: PASS state (second half of cycle) -->
+  <g class="score-pass">
+    <rect x="730" y="55" width="130" height="100" rx="12" fill="rgba(55,163,163,0.06)" stroke="#37A3A3" stroke-opacity="0.4" stroke-width="1.5"/>
+    <text x="795" y="80" text-anchor="middle" fill="#37A3A3" font-size="10" font-weight="700" letter-spacing="0.1em">SCORE</text>
+    <text x="795" y="115" text-anchor="middle" fill="#9AD8D8" font-size="28" font-weight="800" class="hb">18/20</text>
+    <text x="795" y="143" text-anchor="middle" fill="#6DFFB0" font-size="11" font-weight="700">✓ PASS</text>
+  </g>
+
+  <!-- Feedback Loop Arc (glows during fail phase) -->
+  <path d="M 600,170 Q 600,300 350,300 Q 195,300 195,160" fill="none" stroke="#EE0000" stroke-width="1.5" class="fb-pulse flr"/>
+  <polygon points="192,165 198,165 195,155" fill="#EE0000" class="fail-phase"/>
+
+  <!-- Feedback Label -->
+  <rect x="310" y="283" width="160" height="28" rx="8" fill="rgba(238,0,0,0.06)" stroke="#EE0000" stroke-opacity="0.2" stroke-width="1" class="fb-pulse"/>
+  <text x="390" y="301" text-anchor="middle" fill="#F56E6E" font-size="10" font-weight="600" class="lbl fail-phase">↩ feedback · revise</text>
+
+  <!-- Iteration counter -->
+  <text x="195" y="185" text-anchor="middle" fill="#A3A3A3" font-size="9" class="lbl fail-phase">iteration 1 → 2</text>
+  <text x="195" y="185" text-anchor="middle" fill="#6DFFB0" font-size="9" class="lbl pass-phase">✓ done in 2 iterations</text>
+
+  <!-- MLFlow Card -->
+  <rect x="730" y="195" width="160" height="110" rx="12" fill="rgba(245,146,27,0.07)" stroke="#F5921B" stroke-opacity="0.4" stroke-width="1.5"/>
+  <text x="750" y="222" fill="#F5921B" font-size="11" font-weight="700" letter-spacing="0.05em">📊 MLFLOW</text>
+  <text x="750" y="242" fill="#FCCB8F" font-size="10" class="lbl">scores per iteration</text>
+  <text x="750" y="258" fill="#FCCB8F" font-size="10" class="lbl">output artifacts</text>
+  <text x="750" y="274" fill="#FCCB8F" font-size="10" class="lbl">judge justifications</text>
+  <text x="750" y="292" fill="#A3A3A3" font-size="9" class="lbl p1">experiment tracking</text>
+  <circle cx="882" cy="250" r="4" fill="#F5921B" class="p2"/>
+
+  <!-- Flow: Score → MLFlow -->
+  <line x1="795" y1="160" x2="795" y2="190" stroke="#F5921B" stroke-width="1.2" class="fl3" marker-end="url(#arrow-orange)"/>
+
+  <!-- Footer -->
+  <text x="460" y="345" text-anchor="middle" fill="#A3A3A3" font-size="9" letter-spacing="0.12em" class="lbl">OUTCOME LOOP · AGENT GENERATES · JUDGE SCORES · FEEDBACK REVISES · MLFLOW LOGS</text>
+</svg>

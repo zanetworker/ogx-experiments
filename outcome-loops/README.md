@@ -2,6 +2,10 @@
 
 Tests how well different models improve low-quality RFEs when given rubric feedback. Runs across all available OGX models, scores with a configurable judge, and logs everything to MLFlow.
 
+<p align="center">
+  <img src="outcome-loop-animated.svg" alt="Outcome loop: agent generates, judge scores, feedback revises, MLFlow logs" width="900"/>
+</p>
+
 ## Architecture
 
 ```
