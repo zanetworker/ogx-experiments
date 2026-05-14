@@ -4,21 +4,30 @@ Personal dev/test scripts exercising OGX features through the OpenAI-compatible 
 
 ## Quick start
 
+This repo lives inside the OGX (llama-stack) checkout at `experiments/`.
+
 ```bash
-# Setup (once, from the llama-stack repo root)
+# 1. Setup OGX (once, from the llama-stack repo root)
+cd /path/to/llama-stack
 uv venv --python 3.12 && uv sync --group dev && uv pip install -e .
-uv pip install -r experiments/requirements.txt
 
-# Start server with MaaS
-source ./experiments/ogx-dev-setup/mint-maas-token.sh
-./experiments/ogx-dev-setup/run-ogx.sh
+# 2. Install experiment dependencies
+pip install -r experiments/requirements.txt
 
-# Run a script
+# 3. Activate the venv
 source .venv/bin/activate
-INFERENCE_MODEL=vllm/kimi-k2-6 python experiments/inference/token_tracking.py
+
+# 4. Start server with MaaS
+cd experiments
+source ogx-dev-setup/mint-maas-token.sh
+./ogx-dev-setup/run-ogx.sh
+
+# 5. Run a script (in another terminal, from experiments/)
+source ../.venv/bin/activate
+INFERENCE_MODEL=vllm/kimi-k2-6 python inference/token_tracking.py
 
 # Or with OpenAI
-INFERENCE_MODEL=openai/gpt-4o-mini python experiments/inference/structured_output.py
+INFERENCE_MODEL=openai/gpt-4o-mini python inference/structured_output.py
 ```
 
 ## Structure
