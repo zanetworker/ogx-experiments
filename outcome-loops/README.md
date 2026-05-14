@@ -54,7 +54,7 @@ Tests how well different models improve low-quality RFEs when given rubric feedb
 |-----------|---------|
 | MLFlow | 3.11.1 |
 | OpenAI Python SDK | 2.28.0 |
-| OGX (Llama Stack) | 0.2.x (running on localhost:8321) |
+| OGX | 0.8.1.dev105 (running on localhost:8321, started with `ogx run`) |
 | Python | 3.11+ |
 | Judge models | openai/gpt-4.1-mini, openai/gpt-5-mini |
 | Agent models | kimi/kimi-k2-6, gemma/gemma4, scout/llama-4-scout-17b-16e-w4a16, nemotron/nemotron-cascade-2-30b, qwen/qwen35-9b |
