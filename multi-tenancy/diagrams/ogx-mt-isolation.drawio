@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile>
+  <diagram name="OGX Tenant Isolation" id="mt-isolation">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0" background="none">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Background -->
+        <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="-50" y="-40" width="1200" height="780" as="geometry"/>
+        </mxCell>
+
+        <!-- Title -->
+        <mxCell id="title" value="OGX Resource Isolation: What Each Tenant Sees" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#151515;fontSize=22;fontStyle=1;fontFamily=Red Hat Display,Arial;" vertex="1" parent="1">
+          <mxGeometry x="200" y="-20" width="700" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ TEAM A (left) ============ -->
+        <mxCell id="team-a-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1.5;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="20" y="40" width="350" height="340" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-a-label" value="NAMESPACE: team-a" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#0E8585;fontSize=11;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="40" y="48" width="140" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Workload pod -->
+        <mxCell id="team-a-pod" value="&lt;b style='color:#151515;font-size:12px'&gt;Agent Pod&lt;/b&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;(notebook / pipeline / agent)&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0E8585;strokeWidth=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="40" y="75" width="310" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="team-a-sa" value="&lt;b style='color:#151515;font-size:11px'&gt;SA: ogx-developer&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:9px'&gt;principal: system:serviceaccount:team-a:ogx-developer&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="60" y="110" width="280" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow pod to SA -->
+        <mxCell id="arrow-pod-sa-a" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#D0D0D0;strokeWidth=1;endArrow=blockThin;endFill=1;fontSize=8;" edge="1" source="team-a-pod" target="team-a-sa" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Team A resources -->
+        <mxCell id="team-a-res-label" value="Visible Resources (filtered view from OGX)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="40" y="158" width="280" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-a-r1" value="&lt;span style='color:#0E8585;font-size:11px'&gt;resp_001&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;Quantum computing summary&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="183" width="310" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-a-r2" value="&lt;span style='color:#0E8585;font-size:11px'&gt;file_001&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;training_data.jsonl&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="218" width="310" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-a-r3" value="&lt;span style='color:#0E8585;font-size:11px'&gt;vs_001&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;nlp-knowledge-base&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="253" width="310" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- Team A cross-tenant blocked -->
+        <mxCell id="team-a-blocked" value="&lt;span style='color:#CC0000;font-size:11px'&gt;✗ resp_002&lt;/span&gt; &lt;span style='color:#999999;font-size:10px'&gt;403 Access Denied&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFF5F5;strokeColor=#EE0000;strokeWidth=1;dashed=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="298" width="310" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ OGX SERVER (center) ============ -->
+        <mxCell id="ogx-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#FFF5F5;strokeColor=#EE0000;strokeWidth=2;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="400" y="40" width="300" height="530" as="geometry"/>
+        </mxCell>
+        <mxCell id="ogx-title" value="OGX SERVER" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#CC0000;fontSize=14;fontStyle=1;fontFamily=Red Hat Display,Arial;" vertex="1" parent="1">
+          <mxGeometry x="490" y="48" width="110" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Shared resources -->
+        <mxCell id="shared-label" value="SHARED (all tenants see)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="455" y="80" width="180" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="model1" value="&lt;span style='color:#151515;font-size:11px'&gt;model: llama-3-2-3b&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="105" width="260" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="model2" value="&lt;span style='color:#151515;font-size:11px'&gt;model: granite-3-8b&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="135" width="260" height="25" as="geometry"/>
+        </mxCell>
+        <mxCell id="tg1" value="&lt;span style='color:#151515;font-size:11px'&gt;toolgroup: builtin::websearch&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="165" width="260" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Divider -->
+        <mxCell id="divider" value="" style="shape=line;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;dashPattern=4 4;" vertex="1" parent="1">
+          <mxGeometry x="420" y="200" width="260" height="10" as="geometry"/>
+        </mxCell>
+
+        <!-- ABAC engine -->
+        <mxCell id="abac-engine" value="&lt;b style='color:#151515;font-size:12px'&gt;ABAC Engine&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;AuthorizedSqlStore&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFF0F0;strokeColor=#EE0000;strokeWidth=1.5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="430" y="220" width="240" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- Isolated label -->
+        <mxCell id="isolated-label" value="ISOLATED (per-owner rows)" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="450" y="275" width="180" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Database table representation -->
+        <mxCell id="db-header" value="&lt;b style='color:#151515;font-size:10px'&gt;id&lt;/b&gt;     &lt;b style='color:#151515;font-size:10px'&gt;data&lt;/b&gt;     &lt;b style='color:#CC0000;font-size:10px'&gt;owner_principal&lt;/b&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="300" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row1" value="&lt;span style='color:#0E8585;font-size:10px'&gt;resp_001&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;quantum...&lt;/span&gt;  &lt;span style='color:#0E8585;font-size:10px'&gt;team-a/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="322" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row2" value="&lt;span style='color:#C27516;font-size:10px'&gt;resp_002&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;neural...&lt;/span&gt;  &lt;span style='color:#C27516;font-size:10px'&gt;team-b/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="344" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row3" value="&lt;span style='color:#0E8585;font-size:10px'&gt;file_001&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;data.jsonl&lt;/span&gt;  &lt;span style='color:#0E8585;font-size:10px'&gt;team-a/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="366" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row4" value="&lt;span style='color:#C27516;font-size:10px'&gt;file_002&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;eval.csv&lt;/span&gt;  &lt;span style='color:#C27516;font-size:10px'&gt;team-b/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="388" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row5" value="&lt;span style='color:#0E8585;font-size:10px'&gt;vs_001&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;nlp-kb&lt;/span&gt;  &lt;span style='color:#0E8585;font-size:10px'&gt;team-a/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="410" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="db-row6" value="&lt;span style='color:#C27516;font-size:10px'&gt;vs_002&lt;/span&gt;  &lt;span style='color:#6A6A6A;font-size:10px'&gt;vision-kb&lt;/span&gt;  &lt;span style='color:#C27516;font-size:10px'&gt;team-b/ogx-dev&lt;/span&gt;" style="rounded=2;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="420" y="432" width="260" height="22" as="geometry"/>
+        </mxCell>
+
+        <!-- SQL filter annotation -->
+        <mxCell id="sql-anno" value="&lt;b style='color:#151515;font-size:11px'&gt;SQL WHERE clause&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;SELECT * FROM responses&lt;br&gt;WHERE owner_principal = :caller&lt;br&gt;OR access_attributes match&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;align=left;spacingLeft=8;spacingTop=2;" vertex="1" parent="1">
+          <mxGeometry x="425" y="470" width="250" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ TEAM B (right) ============ -->
+        <mxCell id="team-b-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1.5;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="730" y="40" width="350" height="340" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-b-label" value="NAMESPACE: team-b" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#C27516;fontSize=11;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="750" y="48" width="140" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Workload pod -->
+        <mxCell id="team-b-pod" value="&lt;b style='color:#151515;font-size:12px'&gt;Agent Pod&lt;/b&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;(notebook / pipeline / agent)&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#C27516;strokeWidth=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="75" width="310" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="team-b-sa" value="&lt;b style='color:#151515;font-size:11px'&gt;SA: ogx-developer&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:9px'&gt;principal: system:serviceaccount:team-b:ogx-developer&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=left;spacingLeft=10;" vertex="1" parent="1">
+          <mxGeometry x="770" y="110" width="280" height="38" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow pod to SA -->
+        <mxCell id="arrow-pod-sa-b" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#D0D0D0;strokeWidth=1;endArrow=blockThin;endFill=1;fontSize=8;" edge="1" source="team-b-pod" target="team-b-sa" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- Team B resources -->
+        <mxCell id="team-b-res-label" value="Visible Resources (filtered view from OGX)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="750" y="158" width="280" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-b-r1" value="&lt;span style='color:#C27516;font-size:11px'&gt;resp_002&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;Neural networks explanation&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="183" width="310" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-b-r2" value="&lt;span style='color:#C27516;font-size:11px'&gt;file_002&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;eval_results.csv&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="218" width="310" height="28" as="geometry"/>
+        </mxCell>
+        <mxCell id="team-b-r3" value="&lt;span style='color:#C27516;font-size:11px'&gt;vs_002&lt;/span&gt; &lt;span style='color:#6A6A6A;font-size:10px'&gt;vision-knowledge-base&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFF8F0;strokeColor=#C27516;strokeWidth=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="253" width="310" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- Team B cross-tenant blocked -->
+        <mxCell id="team-b-blocked" value="&lt;span style='color:#CC0000;font-size:11px'&gt;✗ resp_001&lt;/span&gt; &lt;span style='color:#999999;font-size:10px'&gt;403 Access Denied&lt;/span&gt;" style="rounded=4;whiteSpace=wrap;html=1;fillColor=#FFF5F5;strokeColor=#EE0000;strokeWidth=1;dashed=1;align=left;spacingLeft=8;" vertex="1" parent="1">
+          <mxGeometry x="750" y="298" width="310" height="28" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrows: Team A to OGX -->
+        <mxCell id="arrow-a-ogx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.3;entryDx=0;entryDy=0;strokeColor=#0E8585;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="team-a-sa" target="ogx-box" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="97"/>
+              <mxPoint x="380" y="199"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Arrows: Team B to OGX -->
+        <mxCell id="arrow-b-ogx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.3;entryDx=0;entryDy=0;strokeColor=#C27516;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="team-b-sa" target="ogx-box" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="720" y="97"/>
+              <mxPoint x="720" y="199"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Arrows: OGX filtered back to Team A -->
+        <mxCell id="arrow-ogx-a" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#0E8585;strokeWidth=1;dashed=1;dashPattern=6 4;endArrow=blockThin;endFill=1;" edge="1" source="ogx-box" target="team-a-r1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="390" y="411"/>
+              <mxPoint x="390" y="169"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Arrows: OGX filtered back to Team B -->
+        <mxCell id="arrow-ogx-b" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#C27516;strokeWidth=1;dashed=1;dashPattern=6 4;endArrow=blockThin;endFill=1;" edge="1" source="ogx-box" target="team-b-r1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="710" y="411"/>
+              <mxPoint x="710" y="169"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="&lt;span style='color:#0E8585'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Team A resources&lt;/span&gt;     &lt;span style='color:#C27516'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Team B resources&lt;/span&gt;     &lt;span style='color:#EE0000'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;ABAC boundary&lt;/span&gt;     &lt;span style='color:#CC0000'&gt;✗&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Cross-tenant denied&lt;/span&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="150" y="700" width="800" height="25" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

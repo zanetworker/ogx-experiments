@@ -1,0 +1,56 @@
+sequenceDiagram
+    box rgb(232,245,245) Tenant Namespace (team-a)
+        participant Client as Agent Pod<br/>(SA: ogx-developer)
+    end
+
+    box rgb(245,245,240) OpenShift Infra
+        participant Route as OpenShift Route<br/>(TLS Termination)
+    end
+
+    box rgb(240,235,248) OGX Server Pod
+        participant AuthN as AuthN Middleware<br/>(JWT Validation)
+        participant RouteZ as Route Policy<br/>(RBAC)
+        participant API as API Handler<br/>(/v1/responses)
+        participant ABAC as AuthorizedSqlStore<br/>(ABAC)
+    end
+
+    box rgb(240,240,240) Storage
+        participant DB as PostgreSQL
+    end
+
+    Client->>Route: POST /v1/responses<br/>Authorization: Bearer <JWT>
+    Route->>AuthN: Forward (TLS terminated)
+
+    Note over AuthN: Validate JWT signature<br/>via JWKS endpoint
+    AuthN->>AuthN: Extract principal + attributes<br/>sub: "system:sa:team-a:dev"<br/>namespaces: ["team-a"]
+
+    AuthN->>RouteZ: Authenticated request
+    Note over RouteZ: Check route_policy rules<br/>"Can this role call /v1/responses?"
+    RouteZ-->>Client: 403 if route denied
+
+    RouteZ->>API: Authorized request
+    API->>ABAC: store_response(data)
+
+    Note over ABAC: Stamp with owner:<br/>owner_principal = "system:sa:team-a:dev"<br/>access_attributes = {"namespaces":["team-a"]}
+
+    ABAC->>DB: INSERT with owner columns
+
+    DB-->>ABAC: OK
+    ABAC-->>API: Stored
+    API-->>Client: 200 Response created
+
+    rect rgb(245, 245, 255)
+    Note over Client,DB: Later: List responses
+    Client->>Route: GET /v1/responses<br/>Authorization: Bearer <JWT>
+    Route->>AuthN: Forward
+    AuthN->>RouteZ: Authenticated
+    RouteZ->>API: Authorized
+    API->>ABAC: fetch_all(responses)
+
+    Note over ABAC: SQL WHERE clause:<br/>owner_principal = 'system:sa:team-a:dev'<br/>OR access_attributes match
+
+    ABAC->>DB: SELECT ... WHERE owner filter
+    DB-->>ABAC: Only team-a's rows
+    ABAC-->>API: Filtered results
+    API-->>Client: 200 [only your responses]
+    end

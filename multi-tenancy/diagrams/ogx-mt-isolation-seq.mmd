@@ -1,0 +1,58 @@
+sequenceDiagram
+    box rgb(232,245,245) Namespace: team-a
+        participant A as Agent Pod<br/>(SA: team-a/ogx-dev)
+    end
+
+    box rgb(240,235,248) OGX Server
+        participant OGX as OGX Server<br/>(ABAC Engine)
+    end
+
+    box rgb(240,240,240) Storage
+        participant DB as PostgreSQL
+    end
+
+    box rgb(255,243,232) Namespace: team-b
+        participant B as Agent Pod<br/>(SA: team-b/ogx-dev)
+    end
+
+    Note over A,B: Both teams share the same OGX instance and database
+
+    A->>OGX: POST /v1/responses<br/>"Summarize quantum computing"
+    Note over OGX: Stamp owner:<br/>principal = team-a/ogx-dev
+    OGX->>DB: INSERT (owner = team-a)
+    DB-->>OGX: OK
+    OGX-->>A: response_id: resp_001
+
+    B->>OGX: POST /v1/responses<br/>"Explain neural networks"
+    Note over OGX: Stamp owner:<br/>principal = team-b/ogx-dev
+    OGX->>DB: INSERT (owner = team-b)
+    DB-->>OGX: OK
+    OGX-->>B: response_id: resp_002
+
+    rect rgb(245, 250, 245)
+    Note over A,B: Each team lists their responses
+
+    A->>OGX: GET /v1/responses
+    Note over OGX: ABAC filter:<br/>WHERE owner = team-a
+    OGX->>DB: SELECT WHERE owner = team-a
+    DB-->>OGX: [resp_001]
+    OGX-->>A: [resp_001] only
+
+    B->>OGX: GET /v1/responses
+    Note over OGX: ABAC filter:<br/>WHERE owner = team-b
+    OGX->>DB: SELECT WHERE owner = team-b
+    DB-->>OGX: [resp_002]
+    OGX-->>B: [resp_002] only
+    end
+
+    rect rgb(255, 245, 245)
+    Note over A,B: Cross-tenant access attempt
+
+    A->>OGX: GET /v1/responses/resp_002
+    Note over OGX: ABAC check:<br/>team-a ≠ owner(team-b)
+    OGX-->>A: 403 Access Denied
+
+    A->>OGX: DELETE /v1/responses/resp_002
+    Note over OGX: ABAC check:<br/>team-a cannot delete<br/>team-b's resource
+    OGX-->>A: 403 Access Denied
+    end

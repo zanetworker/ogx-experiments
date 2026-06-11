@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile>
+  <diagram name="OGX Multi-Tenancy Auth Layers" id="mt-layers">
+    <mxGraphModel dx="1200" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0" background="none">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- Background -->
+        <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="-50" y="-40" width="1100" height="920" as="geometry"/>
+        </mxCell>
+
+        <!-- Title -->
+        <mxCell id="title" value="OGX Multi-Tenancy: Auth &amp; Access Control Layers" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#151515;fontSize=22;fontStyle=1;fontFamily=Red Hat Display,Arial;" vertex="1" parent="1">
+          <mxGeometry x="130" y="-20" width="740" height="40" as="geometry"/>
+        </mxCell>
+
+        <!-- Subtitle -->
+        <mxCell id="subtitle" value="How identity flows from token to per-row data isolation" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=13;fontStyle=2;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="250" y="20" width="500" height="30" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ IDENTITY PROVIDERS (top) ============ -->
+        <mxCell id="idp-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#D0D0D0;strokeWidth=1;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="50" y="70" width="900" height="110" as="geometry"/>
+        </mxCell>
+        <mxCell id="idp-label" value="IDENTITY PROVIDERS" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="75" width="150" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="k8s" value="&lt;b style='color:#151515;font-size:13px'&gt;Kubernetes OIDC&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Service Account tokens&lt;br&gt;Projected volumes&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0E8585;strokeWidth=1.5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="105" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="kc" value="&lt;b style='color:#151515;font-size:13px'&gt;Keycloak / RHSSO&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Human users&lt;br&gt;External clients&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0E8585;strokeWidth=1.5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="310" y="105" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="gh" value="&lt;b style='color:#151515;font-size:13px'&gt;GitHub&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;PATs / OAuth tokens&lt;br&gt;OSS deployments&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0E8585;strokeWidth=1.5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="540" y="105" width="200" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="gw-hdr" value="&lt;b style='color:#151515;font-size:13px'&gt;Upstream Gateway&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Authorino / Istio&lt;br&gt;Header injection&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#0E8585;strokeWidth=1.5;align=center;" vertex="1" parent="1">
+          <mxGeometry x="770" y="105" width="160" height="60" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: IdP to External -->
+        <mxCell id="arrow-idp-ext" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6A6A6A;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="idp-box" target="ext-box" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="500" y="195"/>
+              <mxPoint x="500" y="195"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow-idp-ext-label" value="JWT / Headers" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="510" y="185" width="90" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ EXTERNAL LAYER (optional) ============ -->
+        <mxCell id="ext-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;dashPattern=8 6;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="50" y="210" width="900" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="ext-label" value="EXTERNAL LAYER (Optional / Future)" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#999999;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="215" width="230" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="gw" value="&lt;b style='color:#999999;font-size:12px'&gt;API Gateway&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AAAAAA;font-size:10px'&gt;Kuadrant / Authorino&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="242" width="180" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="rl" value="&lt;b style='color:#999999;font-size:12px'&gt;Rate Limiting&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AAAAAA;font-size:10px'&gt;Per-user / per-namespace&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="290" y="242" width="200" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="al" value="&lt;b style='color:#999999;font-size:12px'&gt;Audit Logging&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AAAAAA;font-size:10px'&gt;Istio / OpenTelemetry&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="242" width="180" height="45" as="geometry"/>
+        </mxCell>
+        <mxCell id="np" value="&lt;b style='color:#999999;font-size:12px'&gt;Network Policy&lt;/b&gt;&lt;br&gt;&lt;span style='color:#AAAAAA;font-size:10px'&gt;Namespace isolation&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;dashed=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="730" y="242" width="180" height="45" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow: External to OGX -->
+        <mxCell id="arrow-ext-ogx" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6A6A6A;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="ext-box" target="ogx-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ OGX SERVER (main box) ============ -->
+        <mxCell id="ogx-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#FFF5F5;strokeColor=#EE0000;strokeWidth=2;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="50" y="320" width="900" height="340" as="geometry"/>
+        </mxCell>
+        <mxCell id="ogx-label" value="OGX SERVER" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#CC0000;fontSize=14;fontStyle=1;fontFamily=Red Hat Display,Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="325" width="110" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 1: AuthN -->
+        <mxCell id="authn" value="&lt;b style='color:#151515;font-size:14px'&gt;Authentication Middleware (AuthN)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4D4D4D;font-size:11px'&gt;Validates JWT signature via JWKS endpoint&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Extracts: &lt;b style='color:#0E8585'&gt;principal&lt;/b&gt; (who) + &lt;b style='color:#0E8585'&gt;attributes&lt;/b&gt; (roles, teams, projects, namespaces)&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;Providers: OAuth2 JWKS · OAuth2 Introspection · Kubernetes · GitHub · Upstream Header · Custom&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#F0FAFA;strokeColor=#0E8585;strokeWidth=1.5;align=left;spacingLeft=12;spacingTop=4;spacingBottom=4;" vertex="1" parent="1">
+          <mxGeometry x="80" y="360" width="840" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow AuthN to Route -->
+        <mxCell id="arrow-authn-route" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6A6A6A;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="authn" target="route" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow-authn-label" value="identity verified" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="520" y="440" width="90" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 2: Route Policy (RBAC) -->
+        <mxCell id="route" value="&lt;b style='color:#151515;font-size:14px'&gt;Route Authorization (RBAC)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4D4D4D;font-size:11px'&gt;Endpoint-level access control: &lt;i&gt;Can this role call this API?&lt;/i&gt;&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Pattern: &lt;b style='color:#4D4D4D'&gt;permit/forbid&lt;/b&gt; + paths · Conditions: &lt;b style='color:#4D4D4D'&gt;user with admin in roles&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;Default: no route_policy = all routes open · Configured: first match wins, default deny&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#F5F0FF;strokeColor=#5E40BE;strokeWidth=1.5;align=left;spacingLeft=12;spacingTop=4;spacingBottom=4;" vertex="1" parent="1">
+          <mxGeometry x="80" y="460" width="840" height="75" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow Route to ABAC -->
+        <mxCell id="arrow-route-api" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6A6A6A;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="route" target="abac" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="arrow-route-label" value="route permitted" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="520" y="540" width="100" height="20" as="geometry"/>
+        </mxCell>
+
+        <!-- Layer 3: ABAC -->
+        <mxCell id="abac" value="&lt;b style='color:#151515;font-size:14px'&gt;AuthorizedSqlStore (ABAC)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4D4D4D;font-size:11px'&gt;Per-row ownership stamping on CREATE · SQL WHERE filtering on READ&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:11px'&gt;Every row gets: &lt;b style='color:#CC0000'&gt;owner_principal&lt;/b&gt; + &lt;b style='color:#CC0000'&gt;access_attributes&lt;/b&gt;&lt;/span&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;Resources: responses · files · vector_stores · batches · interactions · inference_store&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFF0F0;strokeColor=#EE0000;strokeWidth=2;align=left;spacingLeft=12;spacingTop=4;spacingBottom=4;" vertex="1" parent="1">
+          <mxGeometry x="80" y="560" width="840" height="80" as="geometry"/>
+        </mxCell>
+
+        <!-- Arrow ABAC to Storage -->
+        <mxCell id="arrow-abac-db" style="edgeStyle=orthogonalEdgeStyle;rounded=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeColor=#6A6A6A;strokeWidth=1.5;endArrow=blockThin;endFill=1;" edge="1" source="abac" target="storage-box" parent="1">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <!-- ============ STORAGE ============ -->
+        <mxCell id="storage-box" value="" style="rounded=8;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=#D0D0D0;strokeWidth=1;opacity=100;" vertex="1" parent="1">
+          <mxGeometry x="50" y="680" width="900" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="storage-label" value="STORAGE" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="70" y="685" width="65" height="20" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="pg" value="&lt;b style='color:#151515;font-size:13px'&gt;PostgreSQL / SQLite&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;Every row has:&lt;br&gt;&lt;b style='color:#CC0000'&gt;owner_principal&lt;/b&gt; + &lt;b style='color:#CC0000'&gt;access_attributes&lt;/b&gt;&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="80" y="710" width="400" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="fs" value="&lt;b style='color:#151515;font-size:13px'&gt;File Storage (Local / S3)&lt;/b&gt;&lt;br&gt;&lt;span style='color:#6A6A6A;font-size:10px'&gt;Content keyed by file ID&lt;br&gt;No per-row ownership (gap)&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#D0D0D0;strokeWidth=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="520" y="710" width="400" height="50" as="geometry"/>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend-title" value="Legend" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontColor=#6A6A6A;fontSize=10;fontStyle=1;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="50" y="790" width="50" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend-1" value="&lt;span style='color:#0E8585'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Authentication boundary&lt;/span&gt;     &lt;span style='color:#5E40BE'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Authorization boundary&lt;/span&gt;     &lt;span style='color:#EE0000'&gt;━━&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Data isolation boundary&lt;/span&gt;     &lt;span style='color:#D0D0D0'&gt;┅┅&lt;/span&gt; &lt;span style='color:#6A6A6A'&gt;Future / optional&lt;/span&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;fontFamily=Red Hat Text,Arial;" vertex="1" parent="1">
+          <mxGeometry x="50" y="810" width="920" height="25" as="geometry"/>
+        </mxCell>
+
+        <!-- Right-side annotation -->
+        <mxCell id="anno-box" value="&lt;b style='color:#151515;font-size:11px'&gt;RHOAI 3.4+ Ships&lt;/b&gt;&lt;br&gt;&lt;span style='color:#4D4D4D;font-size:10px'&gt;· OAuth2 JWKS AuthN&lt;br&gt;· Default access_policy&lt;br&gt;· AuthorizedSqlStore&lt;br&gt;· Owner-based isolation&lt;/span&gt;&lt;br&gt;&lt;br&gt;&lt;b style='color:#6A6A6A;font-size:11px'&gt;In Code, Not Config&lt;/b&gt;&lt;br&gt;&lt;span style='color:#999999;font-size:10px'&gt;· route_policy&lt;br&gt;· Kubernetes provider&lt;br&gt;· Upstream header provider&lt;br&gt;· GitHub provider&lt;/span&gt;" style="rounded=6;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#D0D0D0;strokeWidth=1;align=left;spacingLeft=8;spacingTop=4;spacingBottom=4;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="960" y="360" width="170" height="200" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
