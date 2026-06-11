@@ -156,21 +156,21 @@ Every resource this user creates is stamped with that principal and those attrib
 
 ## Architecture
 
-### Auth Layers (draw.io)
+### Auth Layers
 
 ![OGX Multi-Tenancy Auth Layers](diagrams/ogx-mt-layers-drawio.png)
 
 
-### Request Flow (sequence)
+### Request Flow
 
 ![OGX Multi-Tenancy Request Flow](diagrams/ogx-mt-request-flow.png)
 
-### Tenant Isolation: What Each Tenant Sees (draw.io)
+### Tenant Isolation: What Each Tenant Sees
 
 ![OGX Tenant Isolation](diagrams/ogx-mt-isolation-drawio.png)
 
 
-### Tenant Isolation: Step-by-Step (sequence)
+### Tenant Isolation: Step-by-Step
 
 ![OGX Tenant Isolation Sequence](diagrams/ogx-mt-isolation-seq.png)
 
