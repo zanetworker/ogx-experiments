@@ -364,6 +364,22 @@ curl -s -o /dev/null -w "HTTP %{http_code}" \
 # Expected: HTTP 404
 ```
 
+## Tested Versions
+
+| Component | Version | Notes |
+|-----------|---------|-------|
+| OpenShift | 4.20.24 | Kubernetes v1.33.12 |
+| RHOAI | 3.5.0-ea.2 | CSV: `rhods-operator.3.5.0-ea.2` |
+| OGX Operator | 0.10.0 | Image: `rhoai/odh-llama-stack-k8s-operator-rhel9` |
+| OGX Server | 1.0.2+rhaiv.0 | Image: `rhoai/odh-ogx-core-rhel9` |
+| OGXServer CRD | `ogx.io/v1beta1` | Replaced `LlamaStackDistribution` (`llamastack.io/v1alpha1`) |
+| Distribution | `rh-dev` | Only available distribution in 3.5 EA2 |
+| Keycloak Operator | 26.0.17-opr.1 | Red Hat Build of Keycloak (RHBK) |
+| Chat Model | llama-4-scout-17b-16e-w4a16 | Served via MaaS on separate GPU cluster |
+| Embedding Model | bge-m3 (1024 dims) | Served via MaaS on separate GPU cluster |
+| Auth Provider | OAuth2 JWKS | Kubernetes OIDC as the identity provider |
+| Storage | SQLite (kv + sql) | In-pod ephemeral storage (starter config default) |
+
 ## Validated Results (2026-06-13)
 
 ```
@@ -395,19 +411,13 @@ OGX MULTI-TENANCY VALIDATION
 ============================================================
 ```
 
-## Cluster Details
+## Cluster Topology
 
-| Property | Value |
-|----------|-------|
-| Cluster | <your-cluster-domain> |
-| OCP Version | 4.20.24 |
-| RHOAI Version | 3.5.0-ea.2 |
-| OGX Operator | v0.10.0 |
-| OGXServer CRD | ogx.io/v1beta1 |
-| Distribution | rh-dev |
-| Chat Model | llama-4-scout-17b-16e-w4a16 (via MaaS on TMM GPU cluster) |
-| Embedding Model | bge-m3 (via MaaS on TMM GPU cluster) |
-| Nodes | 3 masters (m6a.2xlarge) + 3 workers (m6a.4xlarge) + 1 GPU (g5.2xlarge) |
+| Role | Instance Type | Count | Notes |
+|------|-------------|-------|-------|
+| Masters | m6a.2xlarge | 3 | 8 vCPU, 32 GB RAM. m6a.xlarge (16 GB) is too small for long-lived clusters. |
+| Workers | m6a.4xlarge | 3 | 16 vCPU, 64 GB RAM. Runs RHOAI pods, OGX server, notebooks. |
+| GPU | g5.2xlarge | 1 | 8 vCPU, 32 GB RAM, 1x NVIDIA A10G. Added via `make gpu`. |
 
 ## Known Issues
 
